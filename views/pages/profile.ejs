@@ -1,0 +1,58 @@
+<%- include('../partials/header') %>
+<div class="container py-5">
+    <h1 class="mb-4">Thông tin tài khoản</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h4>Thông tin cá nhân</h4></div>
+                <div class="card-body">
+                    <div id="profileAlert" class="alert" style="display: none;"></div>
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label for="ten_dang_nhap" class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="ten_dang_nhap" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ho_ten" class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" id="ho_ten">
+                        </div>
+                         <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email">
+                        </div>
+                         <div class="mb-3">
+                            <label for="phone" class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="phone">
+                        </div>
+                         <div class="mb-3">
+                            <label for="dia_chi" class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="dia_chi">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h4>Đổi mật khẩu</h4></div>
+                <div class="card-body">
+                    <div id="passwordAlert" class="alert" style="display: none;"></div>
+                    <form id="passwordForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Mật khẩu cũ</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Đổi mật khẩu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/profile.js"></script>
+<%- include('../partials/footer') %>

@@ -1,0 +1,85 @@
+bookstore-api/
+├── .env
+├── package.json
+├── server.js
+└── src/
+    ├── config/
+    │   └── connectDB.js
+    │
+    ├── controllers/
+    │   ├── authController.js			// Xử lý logic Đăng ký, Đăng nhập.
+    │   ├── cartController.js			//Xử lý logic Quản lý Giỏ hàng.
+    │   ├── categoryController.js		//Xử lý logic Quản lý Danh mục.
+    │   ├── comboController.js			//Xử lý logic Quản lý Combo.
+    │   ├── dashboardController.js		//Xử lý logic Thống kê, Báo cáo cho trang Admin.
+    │   ├── ebookController.js			//Xử lý logic Quản lý và Tải E-book.
+    │   ├── orderController.js			// Xử lý logic Quản lý Đơn hàng
+    │   ├── productController.js		// Xử lý logic Quản lý Sản phẩm, bao gồm cả tìm kiếm, lọc, sắp xếp, phân trang, và export Excel.
+    │   ├── promotionController.js		//Xử lý logic Quản lý Khuyến mãi và áp dụng mã.
+    │   ├── reviewController.js			//Xử lý logic Quản lý Đánh giá, Bình luận.
+    │   ├── slideshowController.js		//Xử lý logic Quản lý Slideshow.
+    │   └── userController.js			//Xử lý logic Quản lý Người dùng (của Admin).
+    │
+    ├── middlewares/
+    │   └── authMiddleware.js
+    │
+    ├── models/
+    │   ├── cartItemModel.js			//Định nghĩa cấu trúc cho Giỏ hàng.
+    │   ├── cartModel.js				//Định nghĩa cấu trúc cho Giỏ hàng.
+    │   ├── categoryModel.js			//Định nghĩa bảng danh_muc_sach.
+    │   ├── comboItemModel.js			//Định nghĩa cấu trúc cho Combo sản phẩm.
+    │   ├── comboModel.js				//Định nghĩa cấu trúc cho Combo sản phẩm.
+    │   ├── ebookDownloadLinkModel.js	// Định nghĩa cấu trúc cho Link tải E-book.
+    │   ├── index.js					//  File trung tâm quản lý các model và các mối quan hệ
+    │   ├── orderItemModel.js			//Định nghĩa cấu trúc cho Đơn hàng.
+    │   ├── orderModel.js				//	Định nghĩa cấu trúc cho Đơn hàng.
+    │   ├── productModel.js				//Định nghĩa bảng sach.
+    │   ├── promotionModel.js			//Định nghĩa cấu trúc cho Khuyến mãi
+    │   ├── reviewModel.js				//Định nghĩa cấu trúc cho Đánh giá/Bình luận
+    │   ├── roleModel.js				//Định nghĩa bảng roles (vai trò).
+    │   ├── slideshowModel.js			// Định nghĩa cấu trúc cho Slide quảng cáo.
+    │   └── userModel.js 				// Định nghĩa bảng users
+    │
+    ├── routes/
+    │   ├── authRouter.js				//Xử lý logic Đăng ký, Đăng nhập.
+    │   ├── cartRouter.js				//
+    │   ├── categoryRouter.js			//
+    │   ├── comboRouter.js				//
+    │   ├── dashboardRouter.js			//
+    │   ├── ebookRouter.js				//
+    │   ├── orderRouter.js				//
+    │   ├── productRouter.js			//
+    │   ├── promotionRouter.js			//
+    │   ├── reviewRouter.js				//
+    │   ├── slideshowRouter.js			//
+    │   └── userRouter.js				//Xử lý logic Quản lý Người dùng (của Admin).
+    │
+    ├── services/
+    │   └── emailService.js
+    │
+    └── utils/
+        └── generateToken.js
+		Giải thích chi tiết chức năng từng file
+Thư mục gốc (/)
+📄 **.env**: File biến môi trường. Lưu trữ các thông tin cấu hình nhạy cảm mà không đưa trực tiếp vào code, ví dụ: thông tin kết nối Cơ sở dữ liệu (host, user, password, database), chuỗi bí mật để mã hóa Token (JWT_SECRET), cổng chạy server (PORT), thông tin tài khoản email để gửi mail (EMAIL_USER, EMAIL_PASSWORD).
+
+📄 **package.json**: File quản lý dự án Node.js. Liệt kê tất cả các thư viện (dependencies) mà dự án sử dụng (Express, Sequelize, JWT,...) và các script để chạy dự án (ví dụ: npm start, npm run dev).
+
+📄 **server.js**: Điểm khởi đầu của ứng dụng. Nhiệm vụ chính là:
+Khởi tạo server bằng Express.
+Kết nối đến Cơ sở dữ liệu thông qua connectDB.
+Cấu hình các middleware toàn cục (như cors để cho phép frontend gọi API, express.json() để đọc dữ liệu JSON từ request).
+"Gắn" (Mount) tất cả các router từ thư mục /src/routes vào các đường dẫn API gốc (ví dụ: app.use('/api/users', userRouter)).
+Lắng nghe các request từ client trên một cổng (PORT) đã định.
+Thư mục src (Source Code)
+Đây là nơi chứa toàn bộ mã nguồn của ứng dụng.
+
+📄 **connectDB.js**: Chịu trách nhiệm duy nhất cho việc kết nối với Cơ sở dữ liệu PostgreSQL. Nó đọc các biến môi trường từ file .env và khởi tạo một đối tượng Sequelize, sau đó export đối tượng này để toàn bộ ứng dụng có thể sử dụng để truy vấn CSDL.
+
+📄 **generateToken.js**: Chứa hàm tiện ích generateToken. Hàm này nhỏ, độc lập, nhận vào id và role_id của người dùng và tạo ra một chuỗi JSON Web Token (JWT). Nó được sử dụng lại ở cả chức năng đăng ký và đăng nhập.
+
+📄 **emailService.js**: Chứa logic nghiệp vụ liên quan đến việc gửi email. Nó cấu hình dịch vụ gửi mail (ví dụ: Gmail) và cung cấp các hàm cụ thể như sendOrderConfirmationEmail (gửi mail xác nhận đơn hàng). Tách ra service giúp Controller gọn gàng hơn và dễ dàng tích hợp với các dịch vụ bên thứ ba.
+
+📄 **authMiddleware.js**: Chứa các "lớp bảo vệ" cho các API endpoint.
+protect: Kiểm tra token JWT trong header của request để xác thực người dùng đã đăng nhập hay chưa.
+admin: Kiểm tra role_id của người dùng (đã được protect xác thực) để phân quyền, đảm bảo chỉ Admin mới có thể truy cập vào các tài nguyên nhất định.

@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<h1 class="mb-4">Chi tiết đơn hàng #${orderId}</h1>
+<div id="order-detail-container" data-order-id="<%= orderId %>">
+    <p>Đang tải chi tiết đơn hàng...</p>
+</div>
+<!-- Admin có thể có thêm các nút hành động ở đây, ví dụ: cập nhật trạng thái -->
+
+<script src="/js/order-detail.js"></script>
+<%- include('../partials/footer') %>

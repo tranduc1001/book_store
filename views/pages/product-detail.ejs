@@ -1,0 +1,90 @@
+<!-- File: /views/pages/product-detail.ejs -->
+
+<%- include('../partials/header') %>
+
+<div class="container">
+    <div class="row">
+        <!-- Cột hình ảnh sản phẩm -->
+        <div class="col-md-5">
+            <img class="img-fluid rounded" src="<%= product.img || '/images/placeholder.png' %>" alt="<%= product.ten_sach %>">
+        </div>
+
+        <!-- Cột thông tin sản phẩm -->
+        <div class="col-md-7">
+            <h1 class="display-5"><%= product.ten_sach %></h1>
+            <p class="lead">Tác giả: <span class="text-primary"><%= product.tac_gia || 'Đang cập nhật' %></span></p>
+            <p>Nhà xuất bản: <%= product.nha_xuat_ban || 'Đang cập nhật' %></p>
+            <p>Năm xuất bản: <%= product.nam_xuat_ban || 'Đang cập nhật' %></p>
+            <% if(product.category) { %>
+                <p>Danh mục: <a href="/products?category=<%= product.category.id %>"><%= product.category.ten_danh_muc %></a></p>
+            <% } %>
+
+            <h2 class="text-danger my-3"><%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %>đ</h2>
+            
+            <p>Số lượng trong kho: <%= product.so_luong_ton_kho %></p>
+
+            <div class="d-flex">
+                <input type="number" class="form-control text-center me-3" value="1" min="1" max="<%= product.so_luong_ton_kho %>" style="max-width: 90px;">
+                <button onclick="addToCart('<%= product.id %>', document.getElementById('quantity-input').value)" class="btn btn-primary flex-shrink-0" type="button">
+                    <i class="bi-cart-fill me-1"></i>
+                    Thêm vào giỏ hàng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab mô tả và bình luận -->
+    <div class="card mt-5">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#description">Mô tả sản phẩm</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#reviews">Đánh giá (<%= reviews.length %>)</a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Nội dung tab mô tả -->
+                <div class="tab-pane fade show active" id="description">
+                    <p><%= product.mo_ta_ngan || "Chưa có mô tả cho sản phẩm này." %></p>
+                    <!-- Trong tương lai có thể thêm trường mo_ta_day_du -->
+                </div>
+
+                <!-- Nội dung tab đánh giá -->
+                <div class="tab-pane fade" id="reviews">
+                    <% if (reviews && reviews.length > 0) { %>
+                        <% reviews.forEach(review => { %>
+                            <div class="d-flex mb-3">
+                                <div class="flex-shrink-0">
+                                    <img class="rounded-circle" src="https://dummyimage.com/50x50/ced4da/6c757d.jpg" alt="...">
+                                </div>
+                                <div class="ms-3">
+                                    <div class="fw-bold"><%= review.User.ho_ten %></div>
+                                    <% if (review.rating) { %>
+                                        <div class="text-warning">
+                                            <% for(let i = 0; i < review.rating; i++) { %>★<% } %><% for(let i = 0; i < 5 - review.rating; i++) { %>☆<% } %>
+                                        </div>
+                                    <% } %>
+                                    <%= review.comment %>
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+                    <% } %>
+                    <hr>
+                    <!-- Form để gửi bình luận/đánh giá sẽ được thêm vào đây -->
+                    <h5>Viết đánh giá của bạn</h5>
+                    <form>
+                        <!-- ... -->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/cart.js"></script>
+<%- include('../partials/footer') %>

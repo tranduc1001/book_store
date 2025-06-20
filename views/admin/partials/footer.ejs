@@ -1,0 +1,48 @@
+                <!-- Kết thúc nội dung chính của mỗi trang -->
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- SweetAlert2 cho các thông báo đẹp -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Bootstrap 5 JS Bundle (bao gồm Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- File JS tùy chỉnh cho trang Admin -->
+    <script>
+        // Logic để hiển thị tên Admin và xử lý Đăng xuất
+        document.addEventListener('DOMContentLoaded', () => {
+            const adminNameSpan = document.getElementById('admin-name');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            const userString = localStorage.getItem('user');
+            if (userString) {
+                const user = JSON.parse(userString);
+                if (adminNameSpan) {
+                    adminNameSpan.textContent = user.ho_ten;
+                }
+            }
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                });
+            }
+        });
+
+        // Logic để ẩn/hiện sidebar
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+
+        toggleButton.onclick = function () {
+            el.classList.toggle("toggled");
+        };
+    </script>
+</body>
+</html>

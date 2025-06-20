@@ -1,0 +1,91 @@
+<!-- File: /views/pages/order-detail.ejs (Ví dụ hoàn chỉnh) -->
+
+<%- include('../partials/header') %>
+
+<main class="container my-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            
+            <!-- TIÊU ĐỀ -->
+            <h2 id="order-id-header">Đang tải chi tiết đơn hàng...</h2>
+            <hr>
+
+            <!-- THÔNG BÁO LỖI (quan trọng) -->
+            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+
+            <!-- THÔNG TIN CHUNG CỦA ĐƠN HÀNG -->
+            <div class="card mb-4">
+                <div class="card-header">Thông tin đơn hàng</div>
+                <div class="card-body">
+                    <p><strong>Ngày đặt hàng:</strong> <span id="order-date"></span></p>
+                    <p><strong>Trạng thái:</strong> <span id="order-status" class="badge bg-info text-dark"></span></p>
+                </div>
+            </div>
+
+            <!-- THÔNG TIN NGƯỜI NHẬN -->
+            <div class="card mb-4">
+                <div class="card-header">Địa chỉ giao hàng</div>
+                <div class="card-body">
+                    <p><strong>Người nhận:</strong> <span id="customer-name"></span></p>
+                    <p><strong>Số điện thoại:</strong> <span id="customer-phone"></span></p>
+                    <p><strong>Địa chỉ:</strong> <span id="customer-address"></span></p>
+                </div>
+            </div>
+
+            <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN HÀNG -->
+            <div class="card mb-4">
+                <div class="card-header">Các sản phẩm đã đặt</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-right">Đơn giá</th>
+                                <th class="text-right">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <!-- JavaScript sẽ điền dữ liệu vào đây -->
+                        <tbody id="order-items-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TỔNG KẾT ĐƠN HÀNG -->
+            <div class="row justify-content-end">
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Tạm tính:</span>
+                                    <strong id="subtotal"></strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Phí vận chuyển:</span>
+                                    <strong id="shipping-fee"></strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between bg-light">
+                                    <span class="h5">Tổng cộng:</span>
+                                    <span class="h5" id="total-price"></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NÚT QUAY LẠI -->
+            <div class="text-center mt-4">
+               <a href="/my-orders" class="btn btn-secondary">Quay lại lịch sử đơn hàng</a>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<!-- Đảm bảo bạn đã nhúng file script ở cuối trang -->
+<script src="/js/order-detail.js"></script>
+
+<%- include('../partials/footer') %>

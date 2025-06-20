@@ -1,0 +1,35 @@
+<!-- File: /views/pages/cart.ejs -->
+<%- include('../partials/header') %>
+
+<section class="h-100" style="background-color: #eee;">
+    <div class="container h-100 py-5">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-normal mb-0 text-black">Giỏ Hàng Của Bạn</h3>
+                </div>
+
+                <div class="card rounded-3 mb-4">
+                    <div class="card-body p-4" id="cart-items-container">
+                        <!-- Các sản phẩm trong giỏ hàng sẽ được JS render vào đây -->
+                        <p>Đang tải giỏ hàng...</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Tổng cộng: <span id="cart-total" class="fw-bold">0đ</span></h5>
+                        <a href="/checkout" class="btn btn-warning btn-block btn-lg">Tiến hành thanh toán</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Link đến file script xử lý giỏ hàng -->
+<script src="/js/cart.js"></script>
+
+<%- include('../partials/footer') %>

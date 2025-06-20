@@ -1,0 +1,87 @@
+<!-- File: /views/admin/pages/categories.ejs -->
+
+<!-- Bắt đầu bằng cách nhúng các partials của admin -->
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<!-- Đây là nội dung chính của trang -->
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Quản lý Danh mục</h1>
+    <p class="mb-4">Tại đây bạn có thể quản lý tất cả các danh mục sản phẩm của cửa hàng.</p>
+
+    <!-- Nút Thêm Mới -->
+    <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="prepareCreateForm()">
+        <i class="fas fa-plus"></i> Thêm danh mục mới
+    </button>
+
+    <!-- Bảng Dữ Liệu -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách Danh mục</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Danh mục</th>
+                            <th>Danh mục cha</th>
+                            <th>Số lượng sản phẩm</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <!-- JavaScript sẽ điền dữ liệu vào đây -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal để Thêm/Sửa Danh mục -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">Thêm/Sửa Danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    <div class="mb-3">
+                        <label for="ten_danh_muc" class="form-label">Tên Danh mục (*)</label>
+                        <input type="text" class="form-control" id="ten_danh_muc" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="danh_muc_cha_id" class="form-label">Danh mục cha</label>
+                        <select class="form-select" id="danh_muc_cha_id">
+                             <option value="">-- Là danh mục gốc --</option>
+                             <!-- JavaScript sẽ load các danh mục khác vào đây -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mo_ta" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="mo_ta" rows="3"></textarea>
+                    </div>
+                     <div class="mb-3">
+                        <label for="img" class="form-label">Link ảnh minh họa</label>
+                        <input type="text" class="form-control" id="img">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="handleFormSubmit()">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nhúng footer và các script cần thiết -->
+<%- include('../partials/footer') %>
+
+<!-- Nhúng file JS xử lý logic cho trang này -->
+<script src="/js/admin-categories.js"></script>

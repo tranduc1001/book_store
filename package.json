@@ -1,0 +1,32 @@
+{
+  "name": "book_store",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "setup pgAdmin4\r DB_USER=cuduc\r DB_PASSWORD=cuduc\r DB_NAME=bookstore_db",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.3",
+    "pg": "^8.16.0",
+    "pg-hstore": "^2.3.4",
+    "require": "^0.4.4",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.3"
+  }
+}

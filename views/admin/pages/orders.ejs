@@ -1,0 +1,38 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Quản lý Đơn hàng</h1>
+    <p class="mb-4">Theo dõi và xử lý tất cả các đơn hàng của khách hàng.</p>
+
+    <!-- Bảng Dữ Liệu -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách Đơn hàng</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="ordersTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID Đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <!-- JavaScript sẽ điền dữ liệu vào đây -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Nhúng file JS xử lý logic cho trang này -->
+<script src="/js/admin-order-list.js"></script>
