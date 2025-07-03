@@ -1,13 +1,117 @@
 <%- include('../partials/header') %>
-<%- include('../partials/sidebar') %>
 
-<h1>Dashboard</h1>
-<p class="lead">Chào mừng đến với trang quản trị!</p>
+<div class="container-fluid">
 
-<!-- Thống kê sẽ được thêm vào đây -->
-<div class="row">
-    <!-- ... -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+    </div>
+    
+    <!-- ========================================================== -->
+    <!-- ============== KHU VỰC BỘ LỌC NGÀY THÁNG ================ -->
+    <!-- ========================================================== -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Bộ lọc thống kê</h6>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <div class="form-group mb-md-0">
+                        <label for="start-date">Từ ngày:</label>
+                        <input type="date" id="start-date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-md-0">
+                        <label for="end-date">Đến ngày:</label>
+                        <input type="date" id="end-date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button id="filter-btn" class="btn btn-primary btn-block">
+                        <i class="fas fa-filter mr-2"></i>Lọc
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- ============== BIỂU ĐỒ DOANH THU THEO THÁNG ================ -->
+    <!-- ========================================================== -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 id="chart-title" class="m-0 font-weight-bold text-primary">Biểu đồ doanh thu</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area" style="height: 400px;">
+                        <canvas id="revenue-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- ============== CÁC BẢNG XẾP HẠNG ========================= -->
+    <!-- ========================================================== -->
+    <div class="row">
+        <!-- Top 5 sản phẩm bán chạy -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 5 sản phẩm bán chạy</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Tên sản phẩm</th>
+                                    <th scope="col" class="text-right">Đã bán</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-products-body">
+                                <!-- Dữ liệu JS chèn vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 5 khách hàng tiềm năng -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 5 khách hàng tiềm năng</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Tên khách hàng</th>
+                                    <th scope="col" class="text-right">Số đơn hàng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-customers-body">
+                                <!-- Dữ liệu JS chèn vào đây -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<%- include('../partials/footer') %>
 
-<%- include('../partials/footer') %>z
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/admin-dashboard.js"></script>

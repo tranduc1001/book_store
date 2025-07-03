@@ -1,29 +1,8 @@
-// File: /src/models/orderItemModel.js (Phiên bản hoàn chỉnh)
-
-const { Model, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 
-// 1. ĐỊNH NGHĨA CLASS
-class OrderItem extends Model {
-    // 2. THÊM HÀM ASSOCIATE VÀO ĐÂY
-    static associate(models) {
-        // Mối quan hệ "Nhiều-Một": Một OrderItem thuộc về một Order
-        this.belongsTo(models.Order, {
-            foreignKey: 'order_id',
-            as: 'order'
-        });
-
-        // Mối quan hệ "Nhiều-Một": Một OrderItem thuộc về một Product
-        // DÒNG NÀY CHÍNH LÀ PHẦN BỊ THIẾU GÂY RA LỖI
-        this.belongsTo(models.Product, {
-            foreignKey: 'product_id',
-            as: 'product' // Đặt bí danh là 'product' để khớp với controller
-        });
-    }
-}
-
-// 3. KHỞI TẠO MODEL
-OrderItem.init({
+// 1. SỬ DỤNG sequelize.define() ĐỂ TẠO MODEL
+const OrderItem = sequelize.define('OrderItem', {
     // Khóa chính
     id: {
         type: DataTypes.BIGINT,
@@ -34,11 +13,19 @@ OrderItem.init({
     order_id: {
         type: DataTypes.BIGINT,
         allowNull: false,
+        references: {
+            model: 'orders', // Tên bảng 'orders'
+            key: 'id'
+        }
     },
     // Khóa ngoại tham chiếu đến bảng 'products'
     product_id: {
         type: DataTypes.BIGINT,
         allowNull: false,
+        references: {
+            model: 'products', // Tên bảng 'products'
+            key: 'id'
+        }
     },
     // Số lượng sản phẩm được đặt trong mục này
     so_luong_dat: {
@@ -51,11 +38,29 @@ OrderItem.init({
         allowNull: false,
     }
 }, {
-    sequelize,
-    modelName: 'OrderItem',
+    // 2. CÁC TÙY CHỌN CHO MODEL
     tableName: 'order_items',
     timestamps: true
 });
 
-// 4. EXPORT CLASS
+// 3. ĐỊNH NGHĨA CÁC MỐI QUAN HỆ (ASSOCIATIONS)
+OrderItem.associate = (models) => {
+    // Một OrderItem "thuộc về một" Order
+    OrderItem.belongsTo(models.Order, {
+        foreignKey: 'order_id',
+        as: 'order',
+        onDelete: 'CASCADE', // Khi xóa Order, OrderItem này cũng bị xóa
+        onUpdate: 'CASCADE'
+    });
+
+    // Một OrderItem "thuộc về một" Product
+    OrderItem.belongsTo(models.Product, {
+        foreignKey: 'product_id',
+        as: 'product',
+        onDelete: 'SET NULL', // Khi xóa Product, product_id trong OrderItem sẽ thành NULL
+        onUpdate: 'CASCADE'
+    });
+};
+
+// 4. EXPORT MODEL
 module.exports = OrderItem;

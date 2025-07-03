@@ -1,53 +1,110 @@
-// File: /public/js/admin-product.js
+// File: /public/js/admin-product.js 
 
-document.addEventListener('DOMContentLoaded', () => {
-    const productForm = document.getElementById('productForm');
+document.addEventListener('DOMContentLoaded', function() {
+    // ====================================================================
+    // LOGIC XỬ LÝ FORM SẮP XẾP
+    // ====================================================================
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const form = document.getElementById('sort-form');
+            if (!form) {
+                console.error('Không tìm thấy form#sort-form');
+                return;
+            }
 
-    productForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
+            // Xóa các input ẩn cũ để tránh trùng lặp
+            const oldSortBy = form.querySelector('input[name="sortBy"]');
+            if (oldSortBy) oldSortBy.remove();
+            const oldOrder = form.querySelector('input[name="order"]');
+            if (oldOrder) oldOrder.remove();
 
-        // Thu thập dữ liệu từ form
-        const formData = new FormData(productForm);
-        const productData = Object.fromEntries(formData.entries());
-        
-        // Lấy token của admin từ localStorage (giả định admin đã đăng nhập)
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Bạn không có quyền thực hiện hành động này. Vui lòng đăng nhập lại.');
-            window.location.href = '/login';
-            return;
-        }
+            // ==========================================================
+            // ================= SỬA LỖI LOGIC TÁCH CHUỖI ================
+            // ==========================================================
+            const selectedValue = this.value; // Ví dụ: "gia_bia_DESC"
 
-        // Xác định xem đây là hành động THÊM hay SỬA
-        const urlParams = new URLSearchParams(window.location.search);
-        const pathParts = window.location.pathname.split('/');
-        const productId = pathParts[pathParts.length - 1];
-        const isEdit = pathParts[pathParts.length - 2] === 'edit';
-        
-        const method = isEdit ? 'PUT' : 'POST';
-        const apiUrl = isEdit ? `/api/products/${productId}` : '/api/products';
+            // Tìm vị trí của dấu gạch dưới cuối cùng
+            const lastUnderscoreIndex = selectedValue.lastIndexOf('_');
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(productData)
+            // sortByValue sẽ là phần từ đầu đến dấu gạch dưới cuối cùng
+            const sortByValue = selectedValue.substring(0, lastUnderscoreIndex); 
+            
+            // orderValue sẽ là phần từ sau dấu gạch dưới cuối cùng
+            const orderValue = selectedValue.substring(lastUnderscoreIndex + 1);
+            // ==========================================================
+
+            // Tạo input ẩn mới cho sortBy
+            const sortByInput = document.createElement('input');
+            sortByInput.type = 'hidden';
+            sortByInput.name = 'sortBy';
+            sortByInput.value = sortByValue; // Sẽ là 'gia_bia'
+            form.appendChild(sortByInput);
+
+            // Tạo input ẩn mới cho order
+            const orderInput = document.createElement('input');
+            orderInput.type = 'hidden';
+            orderInput.name = 'order';
+            orderInput.value = orderValue; // Sẽ là 'DESC'
+            form.appendChild(orderInput);
+
+            form.submit();
+        });
+    }
+
+    // ====================================================================
+    // LOGIC XỬ LÝ NÚT XÓA SẢN PHẨM
+    // ====================================================================
+    const productTableBody = document.getElementById('products-table-body');
+    if (productTableBody) {
+        productTableBody.addEventListener('click', async function(event) {
+            const deleteButton = event.target.closest('.delete-product-btn');
+            if (!deleteButton) {
+                return;
+            }
+
+            const productId = deleteButton.dataset.id;
+            
+            const result = await Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                text: `Sản phẩm có ID: ${productId} sẽ bị xóa vĩnh viễn!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Vâng, xóa nó đi!',
+                cancelButtonText: 'Hủy bỏ'
             });
 
-            const result = await response.json();
+            if (result.isConfirmed) {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    Swal.fire('Lỗi!', 'Phiên đăng nhập đã hết hạn.', 'error');
+                    return;
+                }
 
-            if (response.ok) {
-                alert(`Thao tác thành công!`);
-                window.location.href = '/admin/products'; // Chuyển về trang danh sách
-            } else {
-                alert(`Lỗi: ${result.message || 'Có lỗi xảy ra'}`);
+                try {
+                    const response = await fetch(`/api/products/${productId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const resultData = await response.json();
+
+                    if (response.ok) {
+                        await Swal.fire(
+                            'Đã xóa!',
+                            resultData.message || 'Sản phẩm đã được xóa thành công.',
+                            'success'
+                        );
+                        // Tải lại trang để cập nhật danh sách
+                        window.location.reload();
+                    } else {
+                        Swal.fire('Thất bại!', resultData.message || 'Không thể xóa sản phẩm.', 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Lỗi kết nối!', 'Không thể kết nối đến server.', 'error');
+                }
             }
-        } catch (error) {
-            console.error('Lỗi khi submit form sản phẩm:', error);
-            alert('Không thể kết nối đến server.');
-        }
-    });
+        });
+    }
 });

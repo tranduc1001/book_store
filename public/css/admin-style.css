@@ -46,3 +46,10 @@ body {
     margin-left: -15rem;
   }
 }
+.list-group-item.active-admin {
+    background-color: #0d6efd !important; /* Màu xanh của Bootstrap hoặc màu bạn thích */
+    color: #ffffff !important;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+}

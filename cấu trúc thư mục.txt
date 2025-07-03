@@ -1,64 +1,129 @@
-bookstore-api/
-├── .env
-├── package.json
-├── server.js
-└── src/
-    ├── config/
-    │   └── connectDB.js
-    │
-    ├── controllers/
-    │   ├── authController.js			// Xử lý logic Đăng ký, Đăng nhập.
-    │   ├── cartController.js			//Xử lý logic Quản lý Giỏ hàng.
-    │   ├── categoryController.js		//Xử lý logic Quản lý Danh mục.
-    │   ├── comboController.js			//Xử lý logic Quản lý Combo.
-    │   ├── dashboardController.js		//Xử lý logic Thống kê, Báo cáo cho trang Admin.
-    │   ├── ebookController.js			//Xử lý logic Quản lý và Tải E-book.
-    │   ├── orderController.js			// Xử lý logic Quản lý Đơn hàng
-    │   ├── productController.js		// Xử lý logic Quản lý Sản phẩm, bao gồm cả tìm kiếm, lọc, sắp xếp, phân trang, và export Excel.
-    │   ├── promotionController.js		//Xử lý logic Quản lý Khuyến mãi và áp dụng mã.
-    │   ├── reviewController.js			//Xử lý logic Quản lý Đánh giá, Bình luận.
-    │   ├── slideshowController.js		//Xử lý logic Quản lý Slideshow.
-    │   └── userController.js			//Xử lý logic Quản lý Người dùng (của Admin).
-    │
-    ├── middlewares/
-    │   └── authMiddleware.js
-    │
-    ├── models/
-    │   ├── cartItemModel.js			//Định nghĩa cấu trúc cho Giỏ hàng.
-    │   ├── cartModel.js				//Định nghĩa cấu trúc cho Giỏ hàng.
-    │   ├── categoryModel.js			//Định nghĩa bảng danh_muc_sach.
-    │   ├── comboItemModel.js			//Định nghĩa cấu trúc cho Combo sản phẩm.
-    │   ├── comboModel.js				//Định nghĩa cấu trúc cho Combo sản phẩm.
-    │   ├── ebookDownloadLinkModel.js	// Định nghĩa cấu trúc cho Link tải E-book.
-    │   ├── index.js					//  File trung tâm quản lý các model và các mối quan hệ
-    │   ├── orderItemModel.js			//Định nghĩa cấu trúc cho Đơn hàng.
-    │   ├── orderModel.js				//	Định nghĩa cấu trúc cho Đơn hàng.
-    │   ├── productModel.js				//Định nghĩa bảng sach.
-    │   ├── promotionModel.js			//Định nghĩa cấu trúc cho Khuyến mãi
-    │   ├── reviewModel.js				//Định nghĩa cấu trúc cho Đánh giá/Bình luận
-    │   ├── roleModel.js				//Định nghĩa bảng roles (vai trò).
-    │   ├── slideshowModel.js			// Định nghĩa cấu trúc cho Slide quảng cáo.
-    │   └── userModel.js 				// Định nghĩa bảng users
-    │
-    ├── routes/
-    │   ├── authRouter.js				//Xử lý logic Đăng ký, Đăng nhập.
-    │   ├── cartRouter.js				//
-    │   ├── categoryRouter.js			//
-    │   ├── comboRouter.js				//
-    │   ├── dashboardRouter.js			//
-    │   ├── ebookRouter.js				//
-    │   ├── orderRouter.js				//
-    │   ├── productRouter.js			//
-    │   ├── promotionRouter.js			//
-    │   ├── reviewRouter.js				//
-    │   ├── slideshowRouter.js			//
-    │   └── userRouter.js				//Xử lý logic Quản lý Người dùng (của Admin).
-    │
-    ├── services/
-    │   └── emailService.js
-    │
-    └── utils/
-        └── generateToken.js
+BOOK_STORE/
+├── node_modules/                       # Thư mục chứa các thư viện đã cài đặt qua npm
+├── public/                             # "MẶT TIỀN" - Chứa các file tĩnh mà trình duyệt có thể truy cập
+│   ├── css/                            # Thư mục chứa file CSS
+│   │   ├── admin-style.css             # CSS tùy chỉnh cho trang quản trị
+│   │   └── style.css                   # CSS tùy chỉnh cho trang người dùng
+│   ├── images/                         # Thư mục chứa ảnh tĩnh
+│   │   └── placeholder.png             # Ảnh mặc định, ảnh giữ chỗ (placeholder)
+│   └── js/                             # Thư mục chứa file JavaScript phía client
+│       ├── admin-auth.js               # JS xử lý form đăng nhập/đăng ký admin
+│       ├── admin-categories.js         # JS xử lý trang quản lý danh mục (thêm, sửa, xóa)
+│       ├── admin-order-detail.js       # JS xử lý trang chi tiết đơn hàng (admin)
+│       ├── admin-order-list.js         # JS xử lý trang danh sách đơn hàng (admin, lọc, tìm kiếm)
+│       ├── admin-product-list.js       # JS xử lý trang danh sách sản phẩm (admin)
+|		|-- admin-product.js
+│       ├── admin-receipt.js            # JS xử lý trang quản lý phiếu nhập
+│       ├── admin-user-list.js          # JS xử lý trang quản lý người dùng
+│       ├── auth.js                     # JS xử lý đăng nhập/đăng ký cho người dùng
+│       ├── cart.js                     # JS xử lý trang giỏ hàng (tăng/giảm số lượng, xóa)
+│       ├── checkout.js                 # JS xử lý trang thanh toán
+│       ├── main.js                     # JS chung cho toàn trang người dùng
+│       ├── my-orders.js                # JS xử lý trang lịch sử đơn hàng của tôi
+│       ├── order-detail.js             # JS xử lý trang chi tiết đơn hàng của người dùng
+│       └── profile.js                  # JS xử lý trang thông tin cá nhân (cập nhật, đổi mật khẩu)
+│
+├── src/                                # "BỘ NÃO" của ứng dụng, chứa toàn bộ code backend
+│   ├── config/                         # Thư mục cấu hình
+│   │   └── connectDB.js                # Cấu hình và khởi tạo kết nối database (Sequelize)
+│   ├── controllers/                    # Chứa các "nhạc trưởng" xử lý logic nghiệp vụ
+│   │   ├── adminViewController.js      # Render các trang giao diện admin (trả về HTML)
+│   │   ├── authController.js           # Xử lý logic Đăng ký, Đăng nhập, JWT
+│   │   ├── cartController.js           # Xử lý API cho Giỏ hàng (thêm, sửa, xóa item)
+│   │   ├── categoryController.js       # Xử lý API cho Danh mục
+│   │   ├── comboController.js          # Xử lý API cho Combo sản phẩm
+│   │   ├── dashboardController.js      # Xử lý API cho trang Dashboard (thống kê)
+│   │   ├── ebookController.js          # Xử lý API cho E-book (tải file...)
+│   │   ├── orderController.js          # Xử lý API cho Đơn hàng (đặt hàng, cập nhật trạng thái)
+│   │   ├── productController.js        # Xử lý API cho Sản phẩm (thêm, sửa, xóa, lấy dữ liệu)
+│   │   ├── promotionController.js      # Xử lý API cho Khuyến mãi
+│   │   ├── receiptController.js        # Xử lý API cho Phiếu nhập hàng
+│   │   ├── reviewController.js         # Xử lý API cho Bình luận/Đánh giá
+│   │   ├── slideshowController.js      # Xử lý API cho Slideshow trang chủ
+│   │   ├── userController.js           # Xử lý API cho Người dùng (cập nhật profile, quản lý)
+│   │   └── viewController.js           # Render các trang giao diện người dùng (trả về HTML)
+│   ├── middlewares/                    # Chứa các "bảo vệ" chạy giữa request và controller
+│   │   └── authMiddleware.js           # Kiểm tra token, xác thực người dùng, phân quyền admin
+│   ├── models/                         # Định nghĩa cấu trúc dữ liệu (tương ứng các bảng trong DB)
+│   │   ├── cartItemModel.js            # Model: Sản phẩm trong giỏ hàng
+│   │   ├── cartModel.js                # Model: Giỏ hàng
+│   │   ├── categoryModel.js            # Model: Danh mục sản phẩm
+│   │   ├── comboItemModel.js           # Model: Sản phẩm trong một combo
+│   │   ├── comboModel.js               # Model: Combo sản phẩm
+│   │   ├── ebookDownloadLinkModel.js   # Model: Link tải ebook cho người dùng đã mua
+│   │   ├── index.js                    # File tổng hợp tất cả model và thiết lập quan hệ (associations)
+│   │   ├── orderItemModel.js           # Model: Sản phẩm trong một đơn hàng
+│   │   ├── orderModel.js               # Model: Đơn hàng
+│   │   ├── productModel.js             # Model: Sản phẩm
+│   │   ├── promotionModel.js           # Model: Khuyến mãi
+│   │   ├── receiptItemModel.js         # Model: Chi tiết phiếu nhập
+│   │   ├── receiptModel.js             # Model: Phiếu nhập
+│   │   ├── reviewModel.js              # Model: Đánh giá/Bình luận
+│   │   ├── roleModel.js                # Model: Vai trò (User, Admin)
+│   │   ├── slideshowModel.js           # Model: Slideshow
+│   │   └── userModel.js                # Model: Người dùng
+│   ├── routes/                         # Chứa các "bảng chỉ đường" (endpoints)
+│   │   ├── adminRouter.js              # Các route cho trang admin (VD: /admin/products)
+│   │   ├── authRouter.js               # Các route cho API xác thực (VD: /api/auth/login)
+│   │   ├── cartRouter.js               # Các route cho API giỏ hàng
+│   │   ├── categoryRouter.js           # Các route cho API danh mục
+│   │   ├── comboRouter.js              # Các route cho API combo
+│   │   ├── dashboardRouter.js          # Các route cho API dashboard
+│   │   ├── ebookRouter.js              # Các route cho API ebook
+│   │   ├── orderRouter.js              # Các route cho API đơn hàng
+│   │   ├── productRouter.js            # Các route cho API sản phẩm
+│   │   ├── promotionRouter.js          # Các route cho API khuyến mãi
+│   │   ├── receiptRouter.js            # Các route cho API phiếu nhập
+│   │   ├── reviewRouter.js             # Các route cho API đánh giá
+│   │   ├── roleRouter.js               # Các route cho API vai trò
+│   │   ├── slideshowRouter.js          # Các route cho API slideshow
+│   │   ├── userRouter.js               # Các route cho API người dùng
+│   │   └── viewRouter.js               # Các route cho trang người dùng (VD: /, /cart, /profile)
+│   ├── seeders/                        # Chứa code để tạo dữ liệu mẫu
+│   │   └── seedData.js                 # File chạy để bơm dữ liệu mẫu vào database
+│   ├── services/                       # Chứa logic kết nối đến dịch vụ bên ngoài
+│   │   └── emailService.js             # Logic gửi email (reset password, xác nhận đơn...)
+│   └── utils/                          # Chứa các hàm tiện ích có thể tái sử dụng
+│       └── generateToken.js            # Hàm tạo JSON Web Token (JWT)
+│
+├── views/                              # Chứa các file giao diện (EJS)
+│   ├── admin/                          # Giao diện cho trang quản trị
+│   │   ├── pages/                      # Các trang chính của admin
+│   │   │   ├── categories.ejs          # Trang quản lý danh mục
+│   │   │   ├── dashboard.ejs           # Trang tổng quan, thống kê
+│   │   │   ├── order-detail.ejs        # Trang chi tiết một đơn hàng
+│   │   │   ├── orders.ejs              # Trang danh sách đơn hàng
+│   │   │   ├── product-form.ejs        # Form thêm/sửa sản phẩm
+│   │   │   ├── products.ejs            # Trang danh sách sản phẩm
+│   │   │   ├── receipt-detail.ejs      # Trang chi tiết một phiếu nhập
+│   │   │   ├── receipts.ejs            # Trang danh sách phiếu nhập
+│   │   │   └── users.ejs               # Trang danh sách người dùng
+│   │   └── partials/                   # Các thành phần tái sử dụng của admin
+│   │       ├── footer.ejs              # Phần chân trang admin
+│   │       └── header.ejs              # Phần đầu trang và thanh menu admin
+│   ├── pages/                          # Giao diện cho trang người dùng
+│   │   ├── cart.ejs                    # Trang giỏ hàng
+│   │   ├── checkout.ejs                # Trang thanh toán
+│   │   ├── error.ejs                   # Trang báo lỗi (404, 500)
+│   │   ├── home.ejs                    # Trang chủ
+│   │   ├── login.ejs                   # Trang đăng nhập
+│   │   ├── my-orders.ejs               # Trang lịch sử đơn hàng của người dùng
+│   │   ├── order-detail.ejs            # Trang chi tiết một đơn hàng của người dùng
+│   │   ├── products.ejs                # Trang danh sách sản phẩm (shop)
+│   │   ├── profile.ejs                 # Trang thông tin cá nhân
+│   │   └── register.ejs                # Trang đăng ký
+│   └── partials/                       # Các thành phần tái sử dụng của người dùng
+│       ├── footer.ejs                  # Phần chân trang người dùng
+│       └── header.ejs                  # Phần đầu trang và thanh điều hướng người dùng
+│
+├── .env                                # Lưu các biến môi trường (port, key bí mật, link db)
+├── .gitignore                          # Các file/thư mục mà Git sẽ bỏ qua (VD: node_modules, .env)
+├── cấu trúc thư mục.txt                # File ghi chú cấu trúc của bạn
+├── package-lock.json                   # Khóa phiên bản chính xác của các thư viện
+├── package.json                        # Thông tin dự án và danh sách các thư viện phụ thuộc
+├── readme.md                           # File giới thiệu, hướng dẫn về dự án
+├── server.js                           # File khởi động chính của server Node.js
+└── sql_book_store.txt                  # File ghi chú SQL của bạn
 		Giải thích chi tiết chức năng từng file
 Thư mục gốc (/)
 📄 **.env**: File biến môi trường. Lưu trữ các thông tin cấu hình nhạy cảm mà không đưa trực tiếp vào code, ví dụ: thông tin kết nối Cơ sở dữ liệu (host, user, password, database), chuỗi bí mật để mã hóa Token (JWT_SECRET), cổng chạy server (PORT), thông tin tài khoản email để gửi mail (EMAIL_USER, EMAIL_PASSWORD).

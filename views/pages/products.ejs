@@ -14,7 +14,7 @@
                     <div class="card h-100">
                         <!-- Hiển thị ảnh sản phẩm. Nếu không có ảnh, dùng ảnh placeholder. -->
                         <a href="/products/<%= product.id %>">
-                            <img class="card-img-top" src="<%= product.img || '/images/placeholder.png' %>" alt="<%= product.ten_sach %>">
+                            <img class="card-img-top" src="<%= product.img %>" alt="<%= product.ten_sach %>">
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">

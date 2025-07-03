@@ -1,6 +1,9 @@
 // File: /src/routes/viewRouter.js
 const express = require('express');
 const router = express.Router();
+const adminViewController = require('../controllers/adminViewController');
+const { protect, admin } = require('../middlewares/authMiddleware');
+
 const {
     renderHomePage,
     renderProductListPage,
@@ -24,4 +27,6 @@ router.get('/checkout', renderCheckoutPage);
 router.get('/my-orders', renderMyOrdersPage);
 router.get('/orders/:id', renderOrderDetailPage);
 router.get('/profile', renderProfilePage);
+
+
 module.exports = router;

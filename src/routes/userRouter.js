@@ -11,7 +11,8 @@ const {
     getAllUsers,
     getUserById,
     updateUserByAdmin,
-    deleteUser
+    deleteUser, 
+    createUserByAdmin,
 } = require('../controllers/userController');
 
 // Import các middleware cần thiết
@@ -43,8 +44,10 @@ router.put('/change-password', protect, changeUserPassword);
 // @desc    Admin lấy danh sách tất cả người dùng
 // @route   GET /api/users
 // @access  Private/Admin
-router.get('/', protect, admin, getAllUsers);
-
+router.route('/')
+    .get(protect, admin, getAllUsers)
+    // ====================== THÊM DÒNG NÀY ======================
+    .post(protect, admin, createUserByAdmin);
 // @desc    Admin lấy, cập nhật, xóa một người dùng cụ thể bằng ID
 // @route   GET, PUT, DELETE /api/users/:id
 // @access  Private/Admin

@@ -6,7 +6,7 @@
     <div class="row">
         <!-- Cột hình ảnh sản phẩm -->
         <div class="col-md-5">
-            <img class="img-fluid rounded" src="<%= product.img || '/images/placeholder.png' %>" alt="<%= product.ten_sach %>">
+            <img class="img-fluid rounded" src="<%= product.img%>" alt="<%= product.ten_sach %>">
         </div>
 
         <!-- Cột thông tin sản phẩm -->
@@ -15,13 +15,13 @@
             <p class="lead">Tác giả: <span class="text-primary"><%= product.tac_gia || 'Đang cập nhật' %></span></p>
             <p>Nhà xuất bản: <%= product.nha_xuat_ban || 'Đang cập nhật' %></p>
             <p>Năm xuất bản: <%= product.nam_xuat_ban || 'Đang cập nhật' %></p>
+            <p>Số trang: <%= product.so_trang %></p>
             <% if(product.category) { %>
                 <p>Danh mục: <a href="/products?category=<%= product.category.id %>"><%= product.category.ten_danh_muc %></a></p>
             <% } %>
 
             <h2 class="text-danger my-3"><%= parseFloat(product.gia_bia).toLocaleString('vi-VN') %>đ</h2>
             
-            <p>Số lượng trong kho: <%= product.so_luong_ton_kho %></p>
 
             <div class="d-flex">
                 <input type="number" class="form-control text-center me-3" value="1" min="1" max="<%= product.so_luong_ton_kho %>" style="max-width: 90px;">

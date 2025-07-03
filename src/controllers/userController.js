@@ -27,9 +27,10 @@ const getAllUsers = async (request, response) => {
             // Chỉ lấy các thuộc tính cần thiết, loại bỏ trường 'mat_khau' để bảo mật.
             attributes: { exclude: ['mat_khau'] },
             // Sử dụng `include` để JOIN với bảng `roles` và lấy `ten_quyen` tương ứng.
-            include: {
+             include: {
                 model: Role,
-                attributes: ['ten_quyen'] // Chỉ lấy cột 'ten_quyen' từ bảng roles
+                as: 'role', // <<<< Bổ sung từ khóa 'as' cho khớp với model
+                attributes: ['id', 'ten_quyen'] // Lấy các thuộc tính cần thiết
             },
             limit: limitNum,   // Giới hạn số lượng bản ghi trên một trang
             offset: offset,    // Bỏ qua bao nhiêu bản ghi

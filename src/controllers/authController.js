@@ -1,6 +1,7 @@
 // File: /src/controllers/authController.js
-
-const { User } = require('../models');
+const bcrypt = require('bcryptjs');
+const db = require('../models'); 
+const { User, Role } = require('../models');
 const { Op } = require('sequelize');
 const generateToken = require('../utils/generateToken');
 
@@ -70,41 +71,53 @@ const registerUser = async (req, res) => {
  * @access          Public
  */
 const loginUser = async (req, res) => {
-    const { email, mat_khau } = req.body;
-
-    // 1. Kiểm tra input
-    if (!email || !mat_khau) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu.' });
-    }
-
     try {
-        // 2. Tìm người dùng bằng email trong CSDL
-        const user = await User.findOne({ where: { email } });
+        const { email, mat_khau } = req.body;
 
-        // 3. Kiểm tra xem người dùng có tồn tại không VÀ mật khẩu có khớp không
-        //    Hàm `user.comparePassword` đã được định nghĩa trong model để so sánh mật khẩu đã hash
+        // Dùng `include` để lấy luôn thông tin Role khi đăng nhập
+        const user = await User.findOne({
+            where: { email },
+            include: { model: Role, as: 'role' }
+        });
+
         if (user && (await user.comparePassword(mat_khau))) {
-            // Nếu tất cả đều hợp lệ, trả về thông tin và token mới
-            return res.status(200).json({
+            const token = generateToken(user.id);
+
+            // Đặt token vào một httpOnly cookie
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 ngày
+            });
+
+            // Trả về thông tin cần thiết cho client
+            res.json({
                 id: user.id,
                 ho_ten: user.ho_ten,
                 email: user.email,
-                role_id: user.role_id, // Rất quan trọng cho việc phân quyền ở frontend
-                token: generateToken(user.id, user.role_id), // Tạo token chứa cả id và role_id
+                role_id: user.role_id, // Gửi role_id để client kiểm tra quyền
+                role: user.role, // Gửi cả object role nếu cần
+                token: token
             });
         } else {
-            // Nếu người dùng không tồn tại hoặc sai mật khẩu
-            return res.status(401).json({ message: 'Email hoặc mật khẩu không chính xác.' });
+            res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
         }
     } catch (error) {
-        // Bắt các lỗi từ server hoặc CSDL
         console.error('Lỗi khi đăng nhập:', error);
-        return res.status(500).json({ message: 'Lỗi server khi đăng nhập.' });
+        res.status(500).json({ message: 'Lỗi server khi đăng nhập.' });
     }
 };
-
-
+const logoutUser = (req, res) => {
+    // Xóa cookie token bằng cách đặt thời gian hết hạn trong quá khứ
+    res.cookie('token', '', {
+        httpOnly: true,
+        expires: new Date(0)
+    });
+    res.status(200).json({ message: 'Đăng xuất thành công.' });
+};
 module.exports = {
     registerUser,
     loginUser,
+    logoutUser
 };

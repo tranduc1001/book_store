@@ -1,19 +1,127 @@
-<!-- File: /views/pages/home.ejs -->
+<%- include('../partials/header', { title: 'Trang chủ' }) %>
 
-<!-- 1. Include phần header -->
-<%- include('../partials/header') %>
-
-<!-- 2. Nội dung riêng của trang chủ -->
-<div class="p-5 mb-4 bg-light rounded-3">
-    <div class="container-fluid py-5">
-      <h1 class="display-5 fw-bold">Chào mừng đến với BookStore!</h1>
-      <p class="col-md-8 fs-4">Nơi tri thức bắt đầu. Khám phá hàng ngàn đầu sách hấp dẫn đang chờ bạn.</p>
-      <a class="btn btn-primary btn-lg" href="/products" role="button">Xem tất cả sách</a>
+<!-- ============================================ -->
+<!-- ============= HERO SLIDESHOW =============== -->
+<!-- ============================================ -->
+<section id="hero-slider-section" class="mb-5">
+    <!-- Slider main container -->
+    <div class="swiper" id="hero-swiper">
+        <!-- Additional required wrapper -->
+        <div class="swiper-wrapper" id="hero-swiper-wrapper">
+            <!-- Slides sẽ được JS chèn vào đây -->
+            <div class="swiper-slide"><img src="/images/slider_item_1_image.png" class="img-fluid" alt="Banner"></div>
+            <div class="swiper-slide"><img src="/images/slider_item_2_image.png" class="img-fluid" alt="Banner"></div>
+            <div class="swiper-slide"><img src="/images/slider_item_3_image.png" class="img-fluid" alt="Banner"></div>
+            <div class="swiper-slide"><img src="/images/slider_item_5_image.png" class="img-fluid" alt="Banner"></div>
+        </div>
+        
+        <!-- If we need pagination -->
+        <div class="swiper-pagination"></div>
+        <!-- If we need navigation buttons -->
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
     </div>
+</section>
+
+
+<!-- ============================================ -->
+<!-- ===== BẮT ĐẦU BỐ CỤC 2 CỘT CHÍNH ========= -->
+<!-- ============================================ -->
+<div class="row">
+
+    <!-- ============================================ -->
+    <!-- ============== CỘT TRÁI (3/12) ============== -->
+    <!-- ============================================ -->
+    <div class="col-lg-3">
+        
+        <!-- KHỐI SÁCH MỚI LÊN KỆ -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="section-title">SÁCH MỚI LÊN KỆ</h5>
+                <a href="/products?sortBy=createdAt&order=DESC" class="btn btn-outline-secondary btn-sm">Xem thêm</a>
+            </div>
+            <div id="new-arrivals-wrapper">
+                <!-- JS sẽ chèn các card sản phẩm dọc vào đây -->
+            </div>
+        </section>
+
+        <!-- KHỐI BÀI VIẾT MỚI 
+        <section class="blog-section mb-5">
+            <h5 class="section-title mb-3">BÀI VIẾT MỚI</h5>
+            <div class="row" id="posts-wrapper">
+                
+            </div>
+        </section>
+-->
+    </div>
+
+    <div class="col-lg-9">
+<!-- ============================================ -->
+<!-- =========== TOP SÁCH BÁN CHẠY ============ -->
+<!-- ============================================ -->
+<section class="product-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="section-title">TOP SÁCH BÁN CHẠY</h3>
+    </div>
+    <div class="swiper" id="bestseller-swiper">
+        <div class="swiper-wrapper" id="bestseller-products-wrapper">
+            <!-- Product cards sẽ được JS chèn vào đây -->
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- ======== DANH MỤC: VĂN HỌC VIỆT NAM ========= -->
+<!-- ============================================ -->
+<section class="product-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="section-title">VĂN HỌC VIỆT NAM</h3>
+        <a href="/products?category=31" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+    </div>
+    <div class="swiper" id="vh-vietnam-swiper">
+        <div class="swiper-wrapper" id="vh-vietnam-products-wrapper">
+            <!-- Product cards sẽ được JS chèn vào đây -->
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- ======== DANH MỤC: VĂN HỌC NƯỚC NGOÀI ====== -->
+<!-- ============================================ -->
+<section class="product-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="section-title">VĂN HỌC NƯỚC NGOÀI</h3>
+        <a href="/products?category=30" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+    </div>
+    <div class="swiper" id="vh-nuoc-ngoai-swiper">
+        <div class="swiper-wrapper" id="vh-nuoc-ngoai-products-wrapper">
+            <!-- Product cards sẽ được JS chèn vào đây -->
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- ======== DANH MỤC: ĐẦU TƯ TÀI CHÍNH ======== -->
+<!-- ============================================ -->
+<section class="product-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="section-title">ĐẦU TƯ - TÀI CHÍNH</h3>
+        <a href="/products?category=29" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+    </div>
+    <div class="swiper" id="finance-swiper">
+        <div class="swiper-wrapper" id="finance-products-wrapper">
+            <!-- Product cards sẽ được JS chèn vào đây -->
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+    </div>
+</section>
+
 </div>
-
-<!-- Sẽ thêm phần hiển thị sản phẩm nổi bật ở đây -->
-
-
-<!-- 3. Include phần footer -->
 <%- include('../partials/footer') %>

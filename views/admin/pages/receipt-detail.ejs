@@ -1,0 +1,76 @@
+<!-- File: /views/admin/pages/receipt-detail.ejs -->
+
+<%- include('../partials/header.ejs') %>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary">Chi Tiết Phiếu Nhập #<%= receipt.id %></h5>
+        <!-- Nút In (Tùy chọn, có thể thêm sau) -->
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-print me-2"></i>In Phiếu
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Hàng 1: Thông tin chung -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6><strong>Thông tin chung:</strong></h6>
+                <p class="mb-1"><strong>Nhà cung cấp:</strong> <%= receipt.ten_nha_cung_cap %></p>
+                <p class="mb-1"><strong>Người nhập:</strong> <%= receipt.creator.ho_ten %> (<%= receipt.creator.email %>)</p>
+                <p class="mb-1"><strong>Ngày nhập:</strong> <%= new Date(receipt.createdAt).toLocaleString('vi-VN') %></p>
+                <p class="mb-1"><strong>Ghi chú:</strong> <%= receipt.ghi_chu || 'Không có' %></p>
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <h6><strong>TỔNG TIỀN PHIẾU NHẬP:</strong></h6>
+                <h2 class="text-danger fw-bold"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(receipt.tong_tien_phieu_nhap) %></h2>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Hàng 2: Danh sách sản phẩm -->
+        <h6 class="mt-4"><strong>Danh sách sản phẩm đã nhập:</strong></h6>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40%;">Sản phẩm</th>
+                        <th class="text-center">Số lượng</th>
+                        <th class="text-end">Giá nhập/SP</th>
+                        <th class="text-end">Chiết khấu/SP</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if(receipt.receiptItems && receipt.receiptItems.length > 0) { %>
+                        <% receipt.receiptItems.forEach(item => { %>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="<%= item.product.img %>" alt="<%= item.product.ten_sach %>" style="width: 40px; height: 60px; object-fit: cover;" class="me-3">
+                                    <span><%= item.product.ten_sach %></span>
+                                </div>
+                            </td>
+                            <td class="text-center align-middle"><%= item.so_luong_nhap %></td>
+                            <td class="text-end align-middle"><%= new Intl.NumberFormat('vi-VN').format(item.gia_nhap) %> ₫</td>
+                            <td class="text-end align-middle"><%= new Intl.NumberFormat('vi-VN').format(item.chiet_khau) %> ₫</td>
+                            <td class="text-end align-middle fw-bold"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.thanh_tien) %></td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" class="text-center">Phiếu nhập này không có sản phẩm chi tiết.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Nút quay lại -->
+        <a href="/admin/receipts" class="btn btn-secondary mt-3">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+        </a>
+    </div>
+</div>
+
+<%- include('../partials/footer.ejs') %>

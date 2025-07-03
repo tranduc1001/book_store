@@ -1,5 +1,6 @@
+<%# File: /views/admin/pages/orders.ejs (ĐÃ SỬA) %>
+
 <%- include('../partials/header') %>
-<%- include('../partials/sidebar') %>
 
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Quản lý Đơn hàng</h1>
@@ -11,16 +12,41 @@
             <h6 class="m-0 font-weight-bold text-primary">Danh sách Đơn hàng</h6>
         </div>
         <div class="card-body">
+            
+            <!-- ========================================================== -->
+            <!-- ============== THÊM FORM TÌM KIẾM/LỌC Ở ĐÂY ============== -->
+            <!-- ========================================================== -->
+            <form id="filter-form" class="mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <input type="text" id="keyword-input" class="form-control" placeholder="Tìm theo ID, tên...">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="status-select" class="form-select">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="pending">Chờ xác nhận</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="shipping">Đang giao</option>
+                            <option value="delivered">Hoàn thành</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Tìm kiếm / Lọc</button>
+                    </div>
+                </div>
+            </form>
+            
             <div class="table-responsive">
                 <table class="table table-bordered" id="ordersTable" width="100%" cellspacing="0">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
                             <th>ID Đơn</th>
                             <th>Khách hàng</th>
                             <th>Ngày đặt</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
-                            <th>Hành động</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody">
@@ -28,11 +54,12 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Container cho thanh phân trang -->
+            <nav id="pagination-container" class="mt-4"></nav>
         </div>
     </div>
 </div>
 
 <%- include('../partials/footer') %>
-
-<!-- Nhúng file JS xử lý logic cho trang này -->
-<script src="/js/admin-order-list.js"></script>
+<script src="/js/admin-order.js"></script>

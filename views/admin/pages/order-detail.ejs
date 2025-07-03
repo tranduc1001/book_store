@@ -1,11 +1,166 @@
+<!-- File: /views/admin/pages/order-detail.ejs (Đã sửa lỗi hiển thị) -->
+
 <%- include('../partials/header') %>
-<%- include('../partials/sidebar') %>
 
-<h1 class="mb-4">Chi tiết đơn hàng #${orderId}</h1>
-<div id="order-detail-container" data-order-id="<%= orderId %>">
-    <p>Đang tải chi tiết đơn hàng...</p>
+<h1 class="mb-4">Chi tiết đơn hàng #<%= order.id %></h1>
+
+<div class="row">
+    <!-- Cột thông tin đơn hàng và khách hàng -->
+    <div class="col-lg-8">
+        <!-- Thông tin Đơn hàng -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Thông tin Đơn hàng</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Ngày đặt:</strong> <span id="order-date"><%= new Date(order.createdAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) %></span></p>
+                
+                <!-- =============== SỬA LỖI HIỂN THỊ TRẠNG THÁI =============== -->
+              
+                <p><strong>Trạng thái:</strong> 
+                    <% 
+                        const statusMap = {
+                            pending: { text: 'Chờ xác nhận', class: 'badge bg-warning text-dark' },
+                            confirmed: { text: 'Đã xác nhận', class: 'badge bg-info text-dark' },
+                            shipping: { text: 'Đang giao', class: 'badge bg-primary' },
+                            delivered: { text: 'Hoàn thành', class: 'badge bg-success' },
+                            cancelled: { text: 'Đã hủy', class: 'badge bg-danger' },
+                        };
+                        const currentStatus = statusMap[order.trang_thai_don_hang] || { text: order.trang_thai_don_hang, class: 'badge bg-secondary' };
+                    %>
+                    <span class="<%= currentStatus.class %>"><%= currentStatus.text %></span>
+                </p>
+
+                <p><strong>Phương thức thanh toán:</strong> <%= order.phuong_thuc_thanh_toan %></p>
+                
+                <!-- ========================================================== -->
+                <!-- ============= SỬA LỖI HIỂN THỊ THANH TOÁN ================ -->
+                <!-- ========================================================== -->
+                <p><strong>Trạng thái thanh toán:</strong> 
+                    <% if (order.trang_thai_thanh_toan) { %>
+                        <span class="badge bg-success">Đã thanh toán</span>
+                    <% } else { %>
+                        <span class="badge bg-secondary">Chưa thanh toán</span>
+                    <% } %>
+                </p>
+            </div>
+        </div>
+
+        <!-- Thông tin Khách hàng (Giữ nguyên) -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Thông tin Khách hàng</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Tên:</strong> <%= order.ten_nguoi_nhan %></p>
+                <p><strong>Email:</strong> <%= order.email_nguoi_nhan %></p>
+                <p><strong>Số điện thoại:</strong> <%= order.so_dt_nguoi_nhan %></p>
+                <p><strong>Địa chỉ giao hàng:</strong> <%= order.dia_chi_giao_hang %></p>
+                <p><strong>Ghi chú:</strong> <%= order.ghi_chu_khach_hang || '(Không có)' %></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột tổng tiền và cập nhật trạng thái -->
+    <div class="col-lg-4">
+        <!-- Tổng kết đơn hàng -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Tổng kết</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Tổng tiền hàng:</strong> 
+                    <!-- Kiểm tra trước khi định dạng: nếu giá trị là null/undefined thì hiển thị 0 -->
+                    <span><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.tong_tien_hang || 0) %></span>
+                </p>
+                
+                <p><strong>Phí vận chuyển:</strong> <span><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.phi_van_chuyen || 0) %></span></p>
+                <hr>
+                <h5 class="font-weight-bold">Tổng thanh toán: <span><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.tong_thanh_toan || 0) %></span></h5>
+            </div>
+        </div>
+        
+        <!-- Cập nhật trạng thái (Giữ nguyên) -->
+       <% 
+    // Chỉ hiển thị box này khi đơn hàng chưa Hoàn thành hoặc chưa bị Hủy
+    const isUpdatable = order.trang_thai_don_hang !== 'delivered' && order.trang_thai_don_hang !== 'cancelled';
+%>
+<% if (isUpdatable) { %>
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Cập nhật Trạng thái</h6>
+    </div>
+    <div class="card-body">
+        <form id="updateStatusForm">
+            <div class="mb-3">
+                <label for="orderStatus" class="form-label">Chọn trạng thái mới:</label>
+                <select class="form-select" id="orderStatus">
+                    <!-- Logic hiển thị các option tùy theo trạng thái hiện tại -->
+                    <% if (order.trang_thai_don_hang === 'pending') { %>
+                        <option value="confirmed">Chờ xác nhận</option>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="cancelled">Đã hủy</option>
+
+                    <% } else if (order.trang_thai_don_hang === 'confirmed') { %>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="shipping">Đang giao</option>
+                        <option value="cancelled">Đã hủy</option>
+
+                    <% } else if (order.trang_thai_don_hang === 'shipping') { %>
+                        <option value="shipping">Đang giao</option>
+                        <option value="delivered">Hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                    <% } %>
+
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-save me-2"></i>Cập nhật
+            </button>
+        </form>
+    </div>
 </div>
-<!-- Admin có thể có thêm các nút hành động ở đây, ví dụ: cập nhật trạng thái -->
+<% } %>
+    </div>
+</div>
 
-<script src="/js/order-detail.js"></script>
+<!-- Bảng chi tiết sản phẩm (Giữ nguyên) -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Chi tiết Sản phẩm</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đơn giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="order-items-table-body">
+                    <% order.orderItems.forEach(item => { %>
+                        <tr>
+                            <td>
+                                <!-- Hiển thị cả ảnh và tên cho đẹp -->
+                                <div class="d-flex align-items-center">
+                                    <img src="<%= item.product.img || '/images/placeholder.png' %>" alt="<%= item.product.ten_sach %>" style="width: 40px; height: 60px; object-fit: cover;" class="me-3">
+                                    <span><%= item.product.ten_sach %></span>
+                                </div>
+                            </td>
+                            <td class="align-middle"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.don_gia) %></td>
+                            <td class="align-middle text-center"><%= item.so_luong_dat %></td>
+                            <td class="align-middle"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.don_gia * item.so_luong_dat) %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <%- include('../partials/footer') %>
+
+<script src="/js/admin-order-detail.js"></script>

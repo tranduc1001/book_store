@@ -8,10 +8,11 @@ const {
     getProductById,
     updateProduct,
     deleteProduct,
-    exportProductsToExcel
+    exportProductsToExcel,
+    getBestsellerProducts
 } = require('../controllers/productController');
 const { protect, admin } = require('../middlewares/authMiddleware');
-
+const upload = require('../middlewares/uploadMiddleware');
 // Import hàm lấy review từ reviewController
 const { getReviewsByProductId } = require('../controllers/reviewController');
 
@@ -21,14 +22,15 @@ router.get('/:id/reviews', getReviewsByProductId);
 
 // Các route chính của sản phẩm
 router.route('/')
-    .post(protect, admin, createProduct)
+    .post(protect, admin, upload.single('img'), createProduct)
     .get(getAllProducts);
-
+router.get('/bestsellers', getBestsellerProducts);
 router.get('/export/excel', protect, admin, exportProductsToExcel);
+
 
 router.route('/:id')
     .get(getProductById)
-    .put(protect, admin, updateProduct)
+    .put(protect, admin, upload.single('img'),updateProduct)
     .delete(protect, admin, deleteProduct);
 
 module.exports = router;

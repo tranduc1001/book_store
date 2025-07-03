@@ -1,77 +1,115 @@
-<!-- File: /views/admin/pages/product-form.ejs (Đã sửa lỗi) -->
+<%- include('../partials/header.ejs') %>
 
-<%- include('../partials/header') %>
-<%- include('../partials/sidebar') %>
+<!-- Form đã được bọc bên ngoài để chứa tất cả các phần -->
+<!-- Thêm enctype để có thể upload file ảnh -->
+<form id="product-form" enctype="multipart/form-data">
 
-<!-- Tiêu đề sẽ thay đổi tùy thuộc vào việc thêm hay sửa -->
-<h1><%= title %></h1>
-
-<div class="card">
-    <div class="card-body">
-        <!-- Form này sẽ được xử lý bằng JS phía client -->
-        <form id="productForm">
-            <div class="row">
-                <div class="col-md-8">
+    <div class="row">
+        <!-- ========================================================== -->
+        <!-- ====================== CỘT TRÁI (LỚN) ==================== -->
+        <!-- ========================================================== -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Tên sách -->
                     <div class="mb-3">
                         <label for="ten_sach" class="form-label">Tên sách</label>
-                        <!-- Nếu có `product`, điền `ten_sach` vào value, nếu không thì để trống -->
                         <input type="text" class="form-control" id="ten_sach" name="ten_sach" value="<%= product ? product.ten_sach : '' %>" required>
                     </div>
 
+                    <!-- Mô tả -->
                     <div class="mb-3">
                         <label for="mo_ta_ngan" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="mo_ta_ngan" name="mo_ta_ngan" rows="5"><%= product ? product.mo_ta_ngan : '' %></textarea>
+                        <textarea class="form-control" id="mo_ta_ngan" name="mo_ta_ngan" rows="8"><%= product ? product.mo_ta_ngan : '' %></textarea>
                     </div>
+
+                    <!-- Hàng chứa các thông tin chi tiết -->
+                    <div class="row">
+                        <!-- Nhà xuất bản -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nha_xuat_ban" class="form-label">Nhà xuất bản</label>
+                            <input type="text" class="form-control" id="nha_xuat_ban" name="nha_xuat_ban" value="<%= product ? product.nha_xuat_ban : '' %>">
+                        </div>
+
+                        <!-- Năm xuất bản -->
+                        <div class="col-md-6 mb-3">
+                            <label for="nam_xuat_ban" class="form-label">Năm xuất bản</label>
+                            <input type="number" class="form-control" id="nam_xuat_ban" name="nam_xuat_ban" value="<%= product ? product.nam_xuat_ban : '' %>" min="1900" max="<%= new Date().getFullYear() %>">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                         <!-- Tác giả -->
+                        <div class="col-md-6 mb-3">
+                            <label for="tac_gia" class="form-label">Tác giả</label>
+                            <input type="text" class="form-control" id="tac_gia" name="tac_gia" value="<%= product ? product.tac_gia : '' %>">
+                        </div>
+
+                        <!-- Số trang -->
+                        <div class="col-md-6 mb-3">
+                            <label for="so_trang" class="form-label">Số trang</label>
+                            <input type="number" class="form-control" id="so_trang" name="so_trang" value="<%= product ? product.so_trang : '' %>" min="1">
+                        </div>
+                    </div>
+
                 </div>
+            </div>
+        </div>
 
-                <div class="col-md-4">
-                     <div class="mb-3">
+        <!-- ========================================================== -->
+        <!-- ===================== CỘT PHẢI (NHỎ) ===================== -->
+        <!-- ========================================================== -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Giá bìa (đã đổi type="text" cho Cleave.js) -->
+                    <div class="mb-3">
                         <label for="gia_bia" class="form-label">Giá bìa</label>
-                        <input type="number" class="form-control" id="gia_bia" name="gia_bia" value="<%= product ? parseFloat(product.gia_bia) : '' %>" required>
+                        <input type="text" class="form-control" id="gia_bia" name="gia_bia" value="<%= product ? product.gia_bia : '' %>" required>
                     </div>
-
+                    
+                    <!-- Số lượng tồn kho -->
                     <div class="mb-3">
                         <label for="so_luong_ton_kho" class="form-label">Số lượng tồn kho</label>
-                        <input type="number" class="form-control" id="so_luong_ton_kho" name="so_luong_ton_kho" value="<%= product ? product.so_luong_ton_kho : '0' %>">
+                        <input type="number" class="form-control" id="so_luong_ton_kho" name="so_luong_ton_kho" value="<%= product ? product.so_luong_ton_kho : '0' %>" required>
                     </div>
 
+                    <!-- Danh mục -->
                     <div class="mb-3">
                         <label for="danh_muc_id" class="form-label">Danh mục</label>
+                        <!-- SỬA LẠI ID VÀ NAME CHO ĐÚNG -->
                         <select class="form-select" id="danh_muc_id" name="danh_muc_id" required>
-                            <option value="">-- Chọn danh mục --</option>
-                            <% categories.forEach(category => { %>
-                                <!-- Nếu là trang sửa và ID danh mục khớp, chọn `selected` -->
-                                <option value="<%= category.id %>" <%= (product && product.danh_muc_id == category.id) ? 'selected' : '' %>>
-                                    <%= category.ten_danh_muc %>
-                                </option>
-                            <% }) %>
+                            <!-- Options sẽ được JS load vào đây -->
                         </select>
                     </div>
                     
-                     <div class="mb-3">
-                        <label for="tac_gia" class="form-label">Tác giả</label>
-                        <input type="text" class="form-control" id="tac_gia" name="tac_gia" value="<%= product ? product.tac_gia : '' %>">
-                    </div>
-                    
+                    <!-- Ảnh đại diện (đã đổi thành type="file") -->
                     <div class="mb-3">
-                        <label for="img" class="form-label">Link ảnh đại diện</label>
-                        <input type="text" class="form-control" id="img" name="img" value="<%= product ? product.img : '' %>">
+                        <label for="img" class="form-label">Ảnh đại diện</label>
+                        <input class="form-control" type="file" id="img" name="img">
                         <% if (product && product.img) { %>
-                            <img src="<%= product.img %>" alt="preview" class="img-thumbnail mt-2" width="100">
+                            <img src="<%= product.img %>" alt="Ảnh hiện tại" class="img-thumbnail mt-2" style="max-width: 100px;">
                         <% } %>
                     </div>
                 </div>
             </div>
-
-            <hr>
-            <!-- Nút submit -->
-            <button type="submit" class="btn btn-primary"><%= product ? 'Lưu thay đổi' : 'Thêm sản phẩm' %></button>
-            <a href="/admin/products" class="btn btn-secondary">Hủy</a>
-        </form>
+            
+            <!-- Nút Lưu/Thêm -->
+            <div class="card mt-3">
+                <div class="card-body">
+                     <button type="submit" class="btn btn-primary w-100">
+                        <%= product ? 'Cập nhật Sản phẩm' : 'Thêm Sản phẩm mới' %>
+                    </button>
+                    <a href="/admin/products" class="btn btn-secondary w-100 mt-2">Hủy</a>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</form>
 
-<!-- ĐÃ SỬA LẠI ĐÚNG ĐƯỜNG DẪN -->
-<script src="/js/admin-product.js"></script>
+<!-- Thêm Cleave.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+<script src="/js/admin-product-form.js"></script>
 
-<%- include('../partials/footer') %>
+
+<%- include('../partials/footer.ejs') %>

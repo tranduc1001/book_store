@@ -2,7 +2,6 @@
 
 <!-- Bắt đầu bằng cách nhúng các partials của admin -->
 <%- include('../partials/header') %>
-<%- include('../partials/sidebar') %>
 
 <!-- Đây là nội dung chính của trang -->
 <div class="container-fluid">
@@ -10,8 +9,8 @@
     <p class="mb-4">Tại đây bạn có thể quản lý tất cả các danh mục sản phẩm của cửa hàng.</p>
 
     <!-- Nút Thêm Mới -->
-    <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="prepareCreateForm()">
-        <i class="fas fa-plus"></i> Thêm danh mục mới
+   <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+        <i class="fas fa-plus fa-sm"></i> Thêm danh mục mới
     </button>
 
     <!-- Bảng Dữ Liệu -->
@@ -22,13 +21,13 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered" id="categoriesTable" width="100%" cellspacing="0">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
                             <th>ID</th>
                             <th>Tên Danh mục</th>
                             <th>Danh mục cha</th>
                             <th>Số lượng sản phẩm</th>
-                            <th>Hành động</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="categoriesTableBody">
@@ -55,11 +54,11 @@
                         <label for="ten_danh_muc" class="form-label">Tên Danh mục (*)</label>
                         <input type="text" class="form-control" id="ten_danh_muc" required>
                     </div>
-                    <div class="mb-3">
+                   <div class="mb-3">
                         <label for="danh_muc_cha_id" class="form-label">Danh mục cha</label>
                         <select class="form-select" id="danh_muc_cha_id">
                              <option value="">-- Là danh mục gốc --</option>
-                             <!-- JavaScript sẽ load các danh mục khác vào đây -->
+                            
                         </select>
                     </div>
                     <div class="mb-3">
@@ -74,7 +73,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="handleFormSubmit()">Lưu thay đổi</button>
+                 <button type="submit" form="categoryForm" class="btn btn-primary">Lưu thay đổi</button>
             </div>
         </div>
     </div>

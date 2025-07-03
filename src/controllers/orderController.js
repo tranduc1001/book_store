@@ -1,10 +1,10 @@
-// File: /src/controllers/orderController.js
-
 // Import các model cần thiết và đối tượng sequelize để sử dụng transaction
-const { Order, OrderItem, Cart, CartItem, Product, sequelize } = require('../models');
-// Import service gửi email
 const db = require('../models');
-const { sendOrderConfirmationEmail } = require('../services/emailService');
+const { sequelize } = db;
+const { Op } = require('sequelize'); // Lấy sequelize và Op từ db object cho nhất quán
+
+// Import service gửi email
+const { sendOrderConfirmationEmail, sendOutOfStockApologyEmail } = require('../services/emailService');
 
 /**
  * @description     Tạo một đơn hàng mới từ giỏ hàng của người dùng.
@@ -12,101 +12,155 @@ const { sendOrderConfirmationEmail } = require('../services/emailService');
  * @access          Private
  */
 const createOrder = async (request, response) => {
-    // Bước 1: Khởi tạo transaction và gán nó vào biến 't'
-     const t = await db.sequelize.transaction();
+    // Khởi tạo transaction để đảm bảo toàn vẹn dữ liệu
+    const t = await sequelize.transaction();
 
     try {
-        const userId = request.user.id; // Lấy userId từ middleware xác thực
-        const { ten_nguoi_nhan, email_nguoi_nhan, sdt_nguoi_nhan, dia_chi_giao_hang, phuong_thuc_thanh_toan, ghi_chu_khach_hang } = request.body;
+        // === BƯỚC 1: LẤY DỮ LIỆU TỪ REQUEST VÀ GIỎ HÀNG ===
+        const userId = request.user.id;
+        // Lấy thông tin người nhận và mã khuyến mãi (nếu có) từ body của request
+        const {
+            ten_nguoi_nhan,
+            email_nguoi_nhan,
+            sdt_nguoi_nhan,
+            dia_chi_giao_hang,
+            phuong_thuc_thanh_toan,
+            ghi_chu_khach_hang,
+            ma_khuyen_mai
+        } = request.body;
 
         // Tìm giỏ hàng của người dùng
         const cart = await db.Cart.findOne({ where: { user_id: userId } });
         if (!cart) {
-            await t.rollback(); // Hủy transaction
-            return response.status(404).json({ message: "Không tìm thấy giỏ hàng." });
+            return response.status(404).json({ message: "Không tìm thấy giỏ hàng của bạn." });
         }
-
-        // Lấy tất cả các sản phẩm trong giỏ hàng
-        const cartItems = await CartItem.findAll({
+        
+        // Lấy tất cả các sản phẩm trong giỏ hàng, kèm theo thông tin chi tiết của sản phẩm
+        const cartItems = await db.CartItem.findAll({
             where: { cart_id: cart.id },
-            include: [{ 
-                model: Product,
-                as: 'product'
-             }]
+            include: [{ model: db.Product, as: 'product' }]
         });
         if (cartItems.length === 0) {
-            await t.rollback(); // Hủy transaction
             return response.status(400).json({ message: "Giỏ hàng của bạn đang trống." });
         }
 
-        // Tính toán tổng giá trị đơn hàng
-          const tong_tien_hang = cartItems.reduce((acc, item) => {
-            if (item.product) { // <<< SỬA 'item.Product' THÀNH 'item.product'
-                return acc + item.product.gia_bia * item.so_luong;
+        // === BƯỚC 2: KIỂM TRA TỒN KHO TRƯỚC KHI TIẾP TỤC ===
+        for (const item of cartItems) {
+            if (!item.product || item.product.so_luong_ton_kho < item.so_luong) {
+                const productName = item.product ? item.product.ten_sach : 'Không xác định';
+                // Gửi email xin lỗi khách hàng vì sự cố hết hàng
+                sendOutOfStockApologyEmail(email_nguoi_nhan, { name: ten_nguoi_nhan }, { id: item.product_id, ten_sach: productName });
+                // Trả về lỗi ngay lập tức để frontend xử lý
+                return response.status(400).json({
+                    message: `Rất tiếc, sản phẩm "${productName}" đã tạm thời hết hàng.`,
+                    outOfStock: true,
+                    productId: item.product_id,
+                });
             }
-            return acc;
-        }, 0);
-        // Giả sử phí vận chuyển là một giá trị cố định hoặc tính toán sau
-        const phi_van_chuyen = 30000;
-        const tong_thanh_toan = tong_tien_hang + phi_van_chuyen;
+        }
 
-        // Bước 2: Tạo đơn hàng và truyền vào { transaction: t }
-        const newOrder = await Order.create({
+        // === BƯỚC 3: XÁC THỰC VÀ TÍNH TOÁN KHUYẾN MÃI (NẾU CÓ) ===
+        let discountAmount = 0;
+        let promotion = null;
+
+        // Tính tổng tiền hàng trước khi áp dụng khuyến mãi
+        const tong_tien_hang = cartItems.reduce((acc, item) => acc + (parseFloat(item.product.gia_bia) * item.so_luong), 0);
+
+        // Chỉ xử lý nếu người dùng có nhập mã khuyến mãi
+        if (ma_khuyen_mai) {
+            promotion = await db.Promotion.findOne({
+                where: {
+                    ma_khuyen_mai: { [Op.iLike]: ma_khuyen_mai }, // Tìm không phân biệt hoa thường
+                    trang_thai: true,
+                    ngay_bat_dau: { [Op.lte]: new Date() },
+                    ngay_ket_thuc: { [Op.gte]: new Date() },
+                    // Đảm bảo số lượng đã dùng nhỏ hơn số lượng giới hạn
+                    so_luong_da_su_dung: { [Op.lt]: db.sequelize.col('so_luong_gioi_han') }
+                }
+            });
+
+            if (!promotion) {
+                throw new Error("Mã khuyến mãi không hợp lệ, đã hết hạn hoặc hết lượt sử dụng.");
+            }
+            if (tong_tien_hang < parseFloat(promotion.dieu_kien_don_hang_toi_thieu)) {
+                const minOrderValue = parseFloat(promotion.dieu_kien_don_hang_toi_thieu).toLocaleString('vi-VN');
+                throw new Error(`Đơn hàng phải có giá trị tối thiểu là ${minOrderValue}đ để áp dụng mã này.`);
+            }
+
+            // Tính toán số tiền được giảm
+            let subtotalForDiscount = tong_tien_hang;
+            // (Trong tương lai có thể thêm logic tính subtotal cho từng loại sản phẩm/danh mục ở đây)
+            
+            if (promotion.loai_giam_gia === 'percentage') {
+                let calculatedDiscount = (subtotalForDiscount * parseFloat(promotion.gia_tri_giam)) / 100;
+                // Áp dụng mức giảm giá tối đa nếu có
+                if (promotion.giam_toi_da && calculatedDiscount > parseFloat(promotion.giam_toi_da)) {
+                    calculatedDiscount = parseFloat(promotion.giam_toi_da);
+                }
+                discountAmount = calculatedDiscount;
+            } else { // 'fixed_amount'
+                discountAmount = parseFloat(promotion.gia_tri_giam);
+            }
+            // Đảm bảo số tiền giảm không vượt quá tổng tiền
+            discountAmount = Math.min(discountAmount, subtotalForDiscount);
+        }
+        
+        // === BƯỚC 4: TÍNH TOÁN GIÁ TRỊ CUỐI CÙNG VÀ TẠO ĐƠN HÀNG ===
+        const phi_van_chuyen = 30000;
+        const tong_thanh_toan = tong_tien_hang - discountAmount + phi_van_chuyen;
+        
+        const newOrder = await db.Order.create({
             user_id: userId,
             ten_nguoi_nhan,
             email_nguoi_nhan,
             sdt_nguoi_nhan,
             dia_chi_giao_hang,
             phuong_thuc_thanh_toan,
-            trang_thai_don_hang: 'pending', // Trạng thái ban đầu
+            trang_thai_don_hang: 'pending',
             tong_tien_hang,
             phi_van_chuyen,
+            so_tien_giam_gia: discountAmount,
+            ma_khuyen_mai_da_ap_dung: promotion ? promotion.ma_khuyen_mai : null,
             tong_thanh_toan,
             ghi_chu_khach_hang
-        }, { transaction: t }); // <<< Đảm bảo tất cả các thao tác ghi đều có option này
+        }, { transaction: t });
 
-        // Bước 3: Chuẩn bị và tạo các mục chi tiết đơn hàng (OrderItem)
-        const orderItems = [];
+        // === BƯỚC 5: TẠO CHI TIẾT ĐƠN HÀNG, CẬP NHẬT KHO VÀ MÃ KHUYẾN MÃI ===
         for (const item of cartItems) {
-            orderItems.push({
+            await db.OrderItem.create({
                 order_id: newOrder.id,
                 product_id: item.product_id,
                 so_luong_dat: item.so_luong,
                 don_gia: item.product.gia_bia,
-                don_gia_sau_khi_khuyen_mai: item.product.gia_bia // Giả sử chưa có khuyến mãi
+            }, { transaction: t });
+
+            await db.Product.decrement('so_luong_ton_kho', {
+                by: item.so_luong,
+                where: { id: item.product_id },
+                transaction: t
             });
-            // Cập nhật số lượng tồn kho của sản phẩm
-            const product = await Product.findByPk(item.product_id, { transaction: t });
-            if (product.so_luong_ton_kho < item.so_luong) {
-                // Nếu không đủ hàng, hủy toàn bộ transaction
-                throw new Error(`Sản phẩm "${product.ten_sach}" không đủ số lượng trong kho.`);
-            }
-            product.so_luong_ton_kho -= item.so_luong;
-            await product.save({ transaction: t });
         }
-        await OrderItem.bulkCreate(orderItems, { transaction: t });
-
-        // Bước 4: Xóa các sản phẩm đã mua khỏi giỏ hàng
-        await CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
-        await Cart.update({ tong_tien: 0 }, { where: { id: cart.id }, transaction: t });
-
-        // Bước 5: Nếu tất cả các bước trên thành công, commit transaction
+        
+        if (promotion) {
+            await promotion.increment('so_luong_da_su_dung', { by: 1, transaction: t });
+        }
+        
+        // === BƯỚC 6: DỌN DẸP GIỎ HÀNG VÀ COMMIT TRANSACTION ===
+        await db.CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
         await t.commit();
 
-        // Gửi email xác nhận (sau khi đã commit thành công)
-        await sendOrderConfirmationEmail(newOrder.email_nguoi_nhan, newOrder.toJSON());
-
-        // Gửi phản hồi thành công về cho client
+        // === BƯỚC 7: GỬI EMAIL XÁC NHẬN VÀ PHẢN HỒI CHO CLIENT ===
+        sendOrderConfirmationEmail(newOrder.email_nguoi_nhan, newOrder.toJSON());
         response.status(201).json(newOrder);
 
     } catch (error) {
-        // Bước 6: Nếu có bất kỳ lỗi nào xảy ra, rollback transaction
+        // Nếu có lỗi, hủy bỏ tất cả các thao tác đã thực hiện trong transaction
         await t.rollback();
+        const statusCode = error.message.includes("Mã khuyến mãi") || error.message.includes("Đơn hàng không đủ điều kiện") ? 400 : 500;
         console.error("Lỗi khi tạo đơn hàng:", error);
-        response.status(500).json({ message: "Lỗi server khi tạo đơn hàng.", error: error.message });
+        response.status(statusCode).json({ message: error.message });
     }
 };
-
 
 /**
  * @description     Lấy danh sách các đơn hàng của người dùng đang đăng nhập.
@@ -115,14 +169,13 @@ const createOrder = async (request, response) => {
  */
 const getMyOrders = async (request, response) => {
     try {
-        // Sử dụng db.Order thay vì Order
         const orders = await db.Order.findAll({
             where: { user_id: request.user.id },
             order: [['createdAt', 'DESC']]
         });
         response.status(200).json(orders);
     } catch (error) {
-        console.error("Lỗi khi lấy danh sách đơn hàng:", error);
+        console.error("Lỗi khi lấy danh sách đơn hàng của tôi:", error);
         response.status(500).json({ message: "Lỗi server.", error: error.message });
     }
 };
@@ -130,39 +183,35 @@ const getMyOrders = async (request, response) => {
 /**
  * @description     Lấy thông tin chi tiết của một đơn hàng.
  * @route           GET /api/orders/:id
- * @access          Private (Cả User và Admin đều có thể xem, nhưng User chỉ xem được đơn của mình)
+ * @access          Private (Cả User và Admin đều có thể xem)
  */
-const getOrderById = async (request, response) => {
+const getOrderById = async (req, res) => {
     try {
-       const order = await db.Order.findByPk(request.params.id, {
-           include: [
+        const orderId = req.params.id;
+        
+        const order = await db.Order.findByPk(orderId, {
+            include: [
+                { model: db.User, as: 'user', attributes: ['ho_ten', 'email'] },
                 {
-                    model: db.OrderItem, 
-                    as: 'orderItems', // Sử dụng bí danh đã định nghĩa trong model
-                    include: {        // Include lồng: Lấy cả thông tin Product
-                        model: db.Product,
-                        as: 'product' // Sử dụng bí danh từ OrderItem -> Product
-                    }
-                },
-                {
-                    model: db.User,     // Lấy cả thông tin người đặt hàng
-                    as: 'user',
-                    attributes: ['id', 'ho_ten', 'email'] // Chỉ lấy các trường cần thiết
+                    model: db.OrderItem,
+                    as: 'orderItems',
+                    include: { model: db.Product, as: 'product', attributes: ['ten_sach', 'img'] }
                 }
             ]
         });
-         if (order) {
-             if (request.user.role === 'admin' || order.user_id === request.user.id) {
-                response.status(200).json(order);
-            } else {
-                response.status(403).json({ message: "Không có quyền truy cập vào đơn hàng này." });
-            }
+
+        if (!order) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+        }
+
+        if (req.user.role.ten_quyen === 'admin' || order.user_id === req.user.id) {
+            return res.status(200).json(order);
         } else {
-            response.status(404).json({ message: "Không tìm thấy đơn hàng." });
+            return res.status(403).json({ message: 'Bạn không có quyền truy cập vào đơn hàng này.' });
         }
     } catch (error) {
         console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
-        response.status(500).json({ message: "Lỗi server.", error: error.message });
+        res.status(500).json({ message: 'Lỗi server.', error: error.message });
     }
 };
 
@@ -171,57 +220,93 @@ const getOrderById = async (request, response) => {
  * @route           PUT /api/orders/:id/status
  * @access          Private/Admin
  */
-const updateOrderStatus = async (request, response) => {
+const updateOrderStatus = async (req, res) => {
+    const { status: newStatus } = req.body;
+    const orderId = req.params.id;
+    const t = await sequelize.transaction();
+
     try {
-        const { trang_thai_don_hang } = request.body;
-        const order = await db.Order.findByPk(request.params.id);
+        const order = await db.Order.findByPk(orderId, {
+            include: [{ model: db.OrderItem, as: 'orderItems' }],
+            transaction: t 
+        });
 
-        if (order) {
-            // Logic hủy đơn: cập nhật lại số lượng tồn kho
-            if (trang_thai_don_hang === 'cancelled' && order.trang_thai_don_hang !== 'cancelled') {
-                const orderItems = await OrderItem.findAll({ where: { order_id: order.id } });
-                for (const item of orderItems) {
-                    await Product.increment('so_luong_ton_kho', {
-                        by: item.so_luong_dat,
-                        where: { id: item.product_id }
-                    });
-                }
-            }
-
-            order.trang_thai_don_hang = trang_thai_don_hang;
-            await order.save();
-            response.status(200).json(order);
-        } else {
-            response.status(404).json({ message: "Không tìm thấy đơn hàng." });
+        if (!order) {
+            await t.rollback();
+            return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
         }
+        
+        const oldStatus = order.trang_thai_don_hang;
+        // Chỉ hoàn trả tồn kho nếu đơn hàng bị hủy từ một trạng thái khác 'cancelled'
+        if (oldStatus !== 'cancelled' && newStatus === 'cancelled') {
+            for (const item of order.orderItems) {
+                await db.Product.increment('so_luong_ton_kho', {
+                    by: item.so_luong_dat,
+                    where: { id: item.product_id },
+                    transaction: t
+                });
+            }
+        }
+        
+        // Nếu admin xác nhận đơn hàng đã giao, tự động cập nhật là đã thanh toán
+        if (newStatus === 'delivered') {
+            order.trang_thai_thanh_toan = true;
+        }
+        
+        order.trang_thai_don_hang = newStatus;
+        await order.save({ transaction: t });
+        await t.commit();
+
+        res.status(200).json({ message: `Trạng thái đơn hàng đã được cập nhật thành công!`, order });
+
     } catch (error) {
+        await t.rollback();
         console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
-        response.status(500).json({ message: "Lỗi server.", error: error.message });
+        res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái.', error: error.message });
     }
 };
+
 /**
- * @description     Admin: Lấy tất cả các đơn hàng trong hệ thống
+ * @description     Admin: Lấy tất cả các đơn hàng trong hệ thống (có phân trang và lọc)
  * @route           GET /api/orders
  * @access          Private/Admin
  */
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await db.Order.findAll({
-            // Sắp xếp đơn hàng mới nhất lên đầu
+        const { page = 1, limit = 10, keyword = '', status = '' } = req.query;
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        let whereCondition = {};
+        if (status) {
+            whereCondition.trang_thai_don_hang = status;
+        }
+        if (keyword) {
+            whereCondition[Op.or] = [
+                db.sequelize.where(db.sequelize.cast(db.sequelize.col('Order.id'), 'varchar'), { [Op.iLike]: `%${keyword}%` }),
+                { ten_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } },
+                { email_nguoi_nhan: { [Op.iLike]: `%${keyword}%` } }
+            ];
+        }
+
+        const { count, rows } = await db.Order.findAndCountAll({
+            where: whereCondition,
             order: [['createdAt', 'DESC']],
-            // Lấy kèm thông tin người đặt hàng để hiển thị
-            include: {
-                model: db.User,
-                as: 'user',
-                attributes: ['ho_ten', 'email'] // Chỉ lấy các trường cần thiết
-            }
+            limit: parseInt(limit),
+            offset: offset,
         });
-        res.status(200).json(orders);
+
+        res.status(200).json({
+            orders: rows,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / parseInt(limit))
+        });
+
     } catch (error) {
-        console.error("Lỗi khi lấy tất cả đơn hàng:", error);
-        res.status(500).json({ message: "Lỗi server.", error: error.message });
+        console.error("Lỗi API getAllOrders:", error);
+        res.status(500).json({ message: 'Lỗi server khi lấy danh sách đơn hàng.' });
     }
 };
+
 module.exports = { 
     createOrder, 
     getMyOrders, 

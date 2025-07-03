@@ -47,7 +47,14 @@ const Product = sequelize.define('Product', {
         allowNull: true,
         comment: 'URL đến hình ảnh đại diện của sản phẩm'
     },
-
+    so_trang: {
+        type: DataTypes.INTEGER, // kiểu số nguyên
+        allowNull: true,
+        validate: {
+            isInt: true,      // Phải là số nguyên
+            min: 1            // Số trang phải lớn hơn 0
+        }
+    },
     // Trường để phân biệt sách in và ebook
     product_type: {
         type: DataTypes.STRING,
@@ -92,14 +99,25 @@ Product.associate = (models) => {
     // --> Sẽ thêm một khóa ngoại `product_id` vào bảng `order_items`.
     Product.hasMany(models.OrderItem, {
         foreignKey: 'product_id',
-        as: 'orderItems'
+        as: 'orderItems',
+        onDelete: 'CASCADE', 
+        hooks: true 
     });
-    
+     Product.hasMany(models.CartItem, {
+         foreignKey: 'product_id', 
+         onDelete: 'CASCADE', 
+         hooks: true });
     // Quan hệ: Một Product có thể có nhiều Reviews (Product.hasMany(Review))
     // --> Sẽ thêm một khóa ngoại `product_id` vào bảng `reviews`.
     Product.hasMany(models.Review, {
         foreignKey: 'product_id',
-        as: 'reviews'
+        as: 'reviews',
+        onDelete: 'CASCADE', 
+        hooks: true 
+    });
+     Product.hasMany(models.ReceiptItem, {
+        foreignKey: 'product_id',
+        as: 'receiptHistory' // Lịch sử nhập hàng
     });
 };
 

@@ -8,6 +8,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 // Thư viện để xử lý Cross-Origin Resource Sharing (CORS)
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 // Module kết nối cơ sở dữ liệu và Sequelize instance
 const { connectDB, sequelize } = require('./src/config/connectDB');
 
@@ -36,6 +37,10 @@ const promotionRouter = require('./src/routes/promotionRouter');
 const comboRouter = require('./src/routes/comboRouter');
 const dashboardRouter = require('./src/routes/dashboardRouter');
 const ebookRouter = require('./src/routes/ebookRouter');
+const roleRouter = require('./src/routes/roleRouter'); 
+const receiptRouter = require('./src/routes/receiptRouter');
+const postRouter = require('./src/routes/postRouter');
+
 
 
 // --- 3. KHỞI TẠO VÀ CẤU HÌNH BAN ĐẦU ---
@@ -54,6 +59,8 @@ app.use(express.urlencoded({ extended: true }));
 // Cho phép các request từ mọi domain (hữu ích khi phát triển với frontend riêng biệt)
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser());
+
 // Middleware của Express để tự động parse các request có body là JSON
 
 // Middleware của Express để parse các request có body được mã hóa dạng URL-encoded
@@ -80,7 +87,9 @@ app.use('/api/promotions', promotionRouter);
 app.use('/api/combos', comboRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/ebooks', ebookRouter);
-
+app.use('/api/roles', roleRouter);
+app.use('/api/receipts', receiptRouter);
+app.use('/api/posts', postRouter);
 // B. Gắn router cho các trang quản trị (Admin)
 app.use('/admin', adminRouter);
 
@@ -96,7 +105,9 @@ const PORT = process.env.PORT || 8080;
 
 // Sử dụng `sequelize.sync()` để đồng bộ hóa
 // Chúng ta sẽ thêm { force: false } để an toàn hơn, nó sẽ không xóa dữ liệu cũ.
-// { force: true } sẽ xóa và tạo lại bảng, hữu ích khi phát triển nhưng nguy hiểm.
+// { force: true } sẽ xóa và tạo lại bảng, mất hết dữ liệu,hữu ích khi phát triển nhưng nguy hiểm.
+//{ alter: true } KHÔNG LÀM MẤT DỮ LIỆU. Nó chỉ thay đổi cấu trúc (schema) của bảng để khớp với model. 
+// Đây là cách an toàn nhất để cập nhật database của bạn trong quá trình phát triển mà không phải viết các file migration phức tạp.
 // Trả lại server.js về trạng thái bình thường để BẢO VỆ DỮ LIỆU
 sequelize.sync().then(() => {
     app.listen(PORT, () => {

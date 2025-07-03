@@ -1,0 +1,190 @@
+<%- include('../partials/header.ejs') %>
+
+<!-- ========================================================== -->
+<!-- ============= PHẦN HIỂN THỊ DANH SÁCH ==================== -->
+<!-- ========================================================== -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h5 class="m-0 font-weight-bold text-primary">Danh sách Phiếu Nhập Hàng</h5>
+        <!-- Nút này sẽ mở Modal bên dưới -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReceiptModal">
+            <i class="fas fa-plus me-2"></i>Tạo Phiếu Nhập
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Form tìm kiếm -->
+        <form method="GET" action="/admin/receipts" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="keyword" class="form-control" placeholder="Tìm theo ID phiếu hoặc tên nhà cung cấp..." value="<%= typeof keyword !== 'undefined' ? keyword : '' %>">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- Bảng danh sách phiếu nhập -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Phiếu</th>
+                        <th>Nhà Cung Cấp</th>
+                        <th>Người Nhập</th>
+                        <th>Ngày Nhập</th>
+                        <th class="text-end">Tổng Tiền</th>
+                        <th class="text-center">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if(typeof receipts !== 'undefined' && receipts.length > 0) { %>
+                        <% receipts.forEach(receipt => { %>
+                            <tr>
+                                <td>#<%= receipt.id %></td>
+                                <!-- Sửa lại để hiển thị tên NCC từ phiếu nhập -->
+                                <td><%= receipt.ten_nha_cung_cap %></td>
+                                <td><%= receipt.creator ? receipt.creator.ho_ten : 'Không rõ' %></td>
+                                <td><%= new Date(receipt.createdAt).toLocaleDateString('vi-VN') %></td>
+                                <td class="text-end fw-bold"><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(receipt.tong_tien_phieu_nhap) %></td>
+                                <td class="text-center">
+                                    <a href="/admin/receipts/<%= receipt.id %>" class="btn btn-info btn-sm" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center py-4">Không có phiếu nhập nào để hiển thị.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phân trang -->
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/receipts?page=<%= i %>&keyword=<%= typeof keyword !== 'undefined' ? keyword : '' %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+        <% } %>
+    </div>
+</div>
+
+<!-- ========================================================== -->
+<!-- ================= MODAL THÊM PHIẾU NHẬP ================== -->
+<!-- ========================================================== -->
+<div class="modal fade" id="addReceiptModal" tabindex="-1" aria-labelledby="addReceiptModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReceiptModalLabel">Tạo Phiếu Nhập Hàng Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- FORM NẰM BÊN TRONG MODAL -->
+                <form id="receipt-form" novalidate>
+                    <!-- Thông tin chung -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label for="supplier-name-input" class="form-label fw-bold">Tên Nhà Cung Cấp <span class="text-danger">*</span></label>
+                            <!-- ĐỔI TỪ SELECT THÀNH INPUT -->
+                            <input type="text" id="supplier-name-input" class="form-control" placeholder="Ví dụ: Fahasa, Nhà sách Phương Nam..." required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="receipt-notes" class="form-label fw-bold">Ghi Chú</label>
+                            <textarea id="receipt-notes" class="form-control" rows="2" placeholder="Thông tin thêm về phiếu nhập..."></textarea>
+                        </div>
+                    </div>
+                    <hr>
+                    <!-- Tìm kiếm sản phẩm -->
+                    <div class="form-group mb-3 position-relative">
+                        <label for="product-search" class="form-label fw-bold">Tìm kiếm sách</label>
+                        <input type="text" id="product-search" class="form-control" placeholder="Gõ tên sách để thêm vào phiếu...">
+                        <div id="product-search-results" class="list-group mt-1 position-absolute w-100" style="z-index: 1056;"></div>
+                    </div>
+                    <!-- Bảng chi tiết sản phẩm -->
+                    <h6 class="fw-bold mt-4">Chi tiết sản phẩm nhập</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên Sản Phẩm</th>
+                                    <th style="width: 120px;">Số Lượng</th>
+                                    <th style="width: 150px;">Giá Nhập/SP</th>
+                                    <th style="width: 150px;">Chiết Khấu/SP</th>
+                                    <th style="width: 160px;">Thành Tiền</th>
+                                    <th style="width: 70px;" class="text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receipt-items-tbody">
+                                <!-- Dòng này sẽ bị ẩn/hiện bằng JS -->
+                                 <tr id="empty-receipt-row">
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có sản phẩm nào trong phiếu nhập.</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold">TỔNG CỘNG</td>
+                                    <td id="receipt-total" class="fw-bold fs-5 text-danger">0 ₫</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <!-- Nút này sẽ trigger submit cho form bên trong modal-body -->
+                <button type="submit" form="receipt-form" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Lưu Phiếu Nhập
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================== -->
+<!-- ========= TEMPLATE CHO DÒNG SẢN PHẨM TRONG MODAL ======== -->
+<!-- ========================================================== -->
+<template id="receipt-item-template">
+    <tr class="receipt-item-row">
+        <td>
+            <div class="d-flex align-items-center">
+                <img class="product-img me-3" src="" alt="ảnh sách" style="width: 40px; height: 60px; object-fit: cover;">
+                <div>
+                    <span class="product-name d-block fw-bold">Tên sản phẩm</span>
+                    <small class="text-muted">ID: <span class="product-id-text"></span></small>
+                    <input type="hidden" class="product-id">
+                </div>
+            </div>
+        </td>
+        <td>
+            <input type="number" class="form-control so-luong-nhap" value="1" min="1" required>
+        </td>
+        <td>
+            <input type="text" class="form-control gia-nhap text-end" value="0" required>
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" class="form-control chiet-khau-percent text-end" value="0" min="0" max="100" step="1">
+                <span class="input-group-text">%</span>
+            </div>
+        </td>
+        <td class="thanh-tien fw-bold align-middle">0 ₫</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm delete-item-btn" title="Xóa dòng này">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<%- include('../partials/footer.ejs') %>
+<script src="/js/admin-receipt.js"></script>

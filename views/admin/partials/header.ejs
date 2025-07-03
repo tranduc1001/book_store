@@ -15,6 +15,7 @@
     
     <!-- File CSS tùy chỉnh cho trang Admin -->
     <link rel="stylesheet" href="/css/admin-style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <!-- Script bảo vệ trang Admin, chạy trước để kiểm tra quyền -->
     <script src="/js/admin-auth.js"></script>
@@ -43,9 +44,16 @@
                 <a href="/admin/orders" class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/orders') ? 'active-admin' : '' %>">
                     <i class="fas fa-shopping-cart me-2"></i>Đơn hàng
                 </a>
+                    <!-- Nhập hàng -->
+                <a href="/admin/receipts" class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/receipts') ? 'active-admin' : '' %>">
+                 <i class="fas fa-receipt me-2"></i>Nhập hàng
+                </a>
+                <a href="/admin/promotions" class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/promotions') ? 'active-admin' : '' %>">
+                    <i class="fas fa-tags me-2"></i>Khuyến mãi
+                </a>
                 <!-- Người dùng -->
-                <a href="#" class="list-group-item list-group-item-action bg-transparent text-light disabled">
-                    <i class="fas fa-users me-2"></i>Người dùng (Sắp có)
+                <a href="/admin/users" class="list-group-item list-group-item-action bg-transparent text-light <%= (typeof path !== 'undefined' && path === '/users') ? 'active-admin' : '' %>">
+                    <i class="fas fa-users me-2"></i>Người dùng
                 </a>
                 <!-- Về trang người dùng -->
                 <a href="/" target="_blank" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">

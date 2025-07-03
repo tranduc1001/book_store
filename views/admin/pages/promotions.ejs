@@ -1,0 +1,35 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Khuyến mãi</h1>
+        <a href="/admin/promotions/add" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus fa-sm"></i> Tạo mới
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="promotions-table">
+                    <thead>
+                        <tr>
+                            <th>Mã KM</th>
+                            <th>Mô tả</th>
+                            <th>Giá trị</th>
+                            <th>Ngày hiệu lực</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promotions-table-body">
+                        <!-- Dữ liệu sẽ được chèn vào đây bằng JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+<script src="/js/admin-promotions.js"></script>

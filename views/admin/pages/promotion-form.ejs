@@ -1,0 +1,118 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800"><%= title %></h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form id="promotion-form" data-promotion-id="<%= promotion ? promotion.id : '' %>">
+                <!-- Mã KM & Mô tả -->
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="ma_khuyen_mai">Mã khuyến mãi</label>
+                        <input type="text" class="form-control" id="ma_khuyen_mai" value="<%= promotion ? promotion.ma_khuyen_mai : '' %>" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="mo_ta">Mô tả</label>
+                        <input type="text" class="form-control" id="mo_ta" value="<%= promotion ? promotion.mo_ta : '' %>" required>
+                    </div>
+                </div>
+
+                <!-- Loại & Giá trị giảm giá -->
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="loai_giam_gia">Loại giảm giá</label>
+                        <select id="loai_giam_gia" class="form-control">
+                            <option value="percentage" <%= (promotion && promotion.loai_giam_gia === 'percentage') ? 'selected' : '' %>>Theo %</option>
+                            <option value="fixed_amount" <%= (promotion && promotion.loai_giam_gia === 'fixed_amount') ? 'selected' : '' %>>Số tiền cố định</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="gia_tri_giam">Giá trị giảm</label>
+                        <input type="text" class="form-control" id="gia_tri_giam" value="<%= promotion ? promotion.gia_tri_giam : '' %>" required>
+                    </div>
+                    <div class="form-group col-md-4" id="giam-toi-da-container">
+                        <label for="giam_toi_da">Giảm tối đa (VNĐ)</label>
+                        <input type="text" class="form-control" id="giam_toi_da" value="<%= promotion ? promotion.giam_toi_da : '' %>">
+                    </div>
+                </div>
+
+                <!-- Phạm vi áp dụng -->
+                <div class="form-group">
+                    <label for="pham_vi_ap_dung">Phạm vi áp dụng</label>
+                    <select id="pham_vi_ap_dung" class="form-control">
+                        <option value="all" <%= (promotion && promotion.pham_vi_ap_dung === 'all') ? 'selected' : '' %>>Toàn bộ đơn hàng</option>
+                        <option value="category" <%= (promotion && promotion.pham_vi_ap_dung === 'category') ? 'selected' : '' %>>Theo Danh mục</option>
+                        <option value="product" <%= (promotion && promotion.pham_vi_ap_dung === 'product') ? 'selected' : '' %>>Theo Sản phẩm</option>
+                    </select>
+                </div>
+
+                <!-- Danh sách áp dụng (ẩn/hiện tùy theo phạm vi) -->
+                <div id="applicable-list-container" class="form-group" style="display: none;">
+                    <label for="danh_sach_id_ap_dung">Chọn các mục áp dụng</label>
+                    <!-- Sử dụng thư viện Select2 để chọn nhiều mục -->
+                    <select id="danh_sach_id_ap_dung" class="form-control" multiple="multiple">
+                        <!-- Options sẽ được chèn vào đây bằng JS -->
+                    </select>
+                </div>
+                
+                <!-- Các điều kiện khác -->
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="dieu_kien_don_hang_toi_thieu">Đơn hàng tối thiểu (VNĐ)</label>
+                        <input type="text" class="form-control" id="dieu_kien_don_hang_toi_thieu" value="<%= promotion ? promotion.dieu_kien_don_hang_toi_thieu : '0' %>" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="so_luong_gioi_han">Số lượng giới hạn (bỏ trống nếu không giới hạn)</label>
+                        <input type="number" class="form-control" id="so_luong_gioi_han" value="<%= promotion ? promotion.so_luong_gioi_han : '' %>">
+                    </div>
+                </div>
+
+                <!-- Ngày hiệu lực -->
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="ngay_bat_dau">Ngày bắt đầu</label>
+                        <input type="datetime-local" class="form-control" id="ngay_bat_dau" value="<%= promotion ? new Date(promotion.ngay_bat_dau).toISOString().slice(0,16) : '' %>" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="ngay_ket_thuc">Ngày kết thúc</label>
+                        <input type="datetime-local" class="form-control" id="ngay_ket_thuc" value="<%= promotion ? new Date(promotion.ngay_ket_thuc).toISOString().slice(0,16) : '' %>" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="trang_thai" <%= (promotion && promotion.trang_thai) ? 'checked' : '' %>>
+                        <label class="form-check-label" for="trang_thai">
+                            Kích hoạt
+                        </label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Nhúng thư viện Select2 để làm dropdown chọn nhiều mục -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+
+<script type="application/json" id="products-data">
+    <%- JSON.stringify(products) %>
+</script>
+<script type="application/json" id="categories-data">
+    <%- JSON.stringify(categories) %>
+</script>
+<script type="application/json" id="promotion-data">
+    <%- JSON.stringify(promotion) %>
+</script>
+
+
+<!-- Nhúng file JavaScript chính để xử lý -->
+<script src="/js/admin-promotion-form.js"></script>

@@ -1,105 +1,116 @@
-// File: /src/controllers/dashboardController.js
-
-// Import các model cần thiết và đối tượng sequelize cùng các toán tử
-const { Order, User, Product, sequelize } = require('../models');
+const db = require('../models');
 const { Op } = require('sequelize');
+const sequelize = db.sequelize;
 
 /**
- * @description     Admin: Lấy các số liệu thống kê tổng quan cho dashboard.
- * @route           GET /api/dashboard/overview
- * @access          Private/Admin
+ * Controller để lấy tất cả dữ liệu thống kê cho trang Dashboard.
+ * Nhận tham số `startDate` và `endDate` từ query string.
  */
-const getDashboardOverview = async (request, response) => {
+const getDashboardStats = async (req, res) => {
     try {
-        // 1. TÍNH TỔNG DOANH THU
-        // Sử dụng hàm `sum` của Sequelize để tính tổng cột 'tong_thanh_toan'.
-        // Chỉ tính cho các đơn hàng đã giao thành công ('delivered').
-        const totalRevenue = await Order.sum('tong_thanh_toan', {
-            where: { trang_thai_don_hang: 'delivered' }
-        });
+        // --- BƯỚC 1: XỬ LÝ KHOẢNG THỜI GIAN ĐẦU VÀO ---
+        let { startDate, endDate } = req.query;
 
-        // 2. ĐẾM SỐ LƯỢNG ĐƠN HÀNG
-        // Sử dụng hàm `count` để đếm số bản ghi.
-        const totalOrders = await Order.count();
-        const successfulOrders = await Order.count({ where: { trang_thai_don_hang: 'delivered' } });
-        const pendingOrders = await Order.count({ where: { trang_thai_don_hang: 'pending' } });
-        const cancelledOrders = await Order.count({ where: { trang_thai_don_hang: 'cancelled' } });
+        // Nếu không có, đặt mặc định là 30 ngày gần nhất
+        if (!startDate || !endDate) {
+            const today = new Date();
+            endDate = new Date();
+            startDate = new Date(new Date().setDate(today.getDate() - 30));
+        } else {
+            // Đảm bảo endDate bao gồm cả ngày cuối cùng (đến 23:59:59)
+            endDate = new Date(endDate);
+            endDate.setHours(23, 59, 59, 999);
+        }
 
-        // 3. ĐẾM SỐ LƯỢNG NGƯỜI DÙNG VÀ SẢN PHẨM
-        const totalUsers = await User.count({ where: { role_id: 2 } }); // Chỉ đếm người dùng thường
-        const totalProducts = await Product.count();
-
-        // 4. TRẢ VỀ KẾT QUẢ
-        // Trả về một đối tượng chứa tất cả các số liệu đã tính toán.
-        // `|| 0` để đảm bảo nếu kết quả là null (khi chưa có đơn hàng nào) thì sẽ trả về 0.
-        response.status(200).json({
-            totalRevenue: totalRevenue || 0,
-            orders: {
-                total: totalOrders,
-                successful: successfulOrders,
-                pending: pendingOrders,
-                cancelled: cancelledOrders
+        // Tạo điều kiện WHERE cho khoảng thời gian để tái sử dụng
+        const dateRangeWhere = {
+            createdAt: {
+                [Op.gte]: new Date(startDate),
+                [Op.lte]: new Date(endDate),
             },
-            totalUsers: totalUsers,
-            totalProducts: totalProducts
-        });
-    } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu tổng quan cho dashboard:", error);
-        response.status(500).json({ message: "Lỗi server.", error: error.message });
-    }
-};
+        };
 
-/**
- * @description     Admin: Lấy dữ liệu doanh thu theo 12 tháng gần nhất để vẽ biểu đồ.
- * @route           GET /api/dashboard/revenue-by-month
- * @access          Private/Admin
- */
-const getRevenueByMonth = async (request, response) => {
-    try {
-        const currentYear = new Date().getFullYear();
-        // Truy vấn này khá phức tạp, nó sử dụng các hàm của CSDL để trích xuất và tính toán.
-        const revenueData = await Order.findAll({
-            // Các cột cần lấy
+        const completedStatus = 'delivered'; // Quan trọng: Phải khớp với ENUM trong model
+
+        // --- BƯỚC 2: LẤY DOANH THU GOM NHÓM THEO THÁNG/NĂM ---
+        // Kết quả sẽ là một mảng các object, ví dụ: [{ year: 2025, month: 6, total: 750000 }]
+        const revenueByMonth = await db.Order.findAll({
             attributes: [
-                // 1. Trích xuất tháng từ cột 'createdAt' và đặt tên cho cột kết quả là 'month'.
-                //    `sequelize.fn` cho phép gọi các hàm gốc của CSDL.
-                //    `sequelize.literal` để viết một chuỗi SQL thuần.
+                [sequelize.fn('EXTRACT', sequelize.literal('YEAR FROM "createdAt"')), 'year'],
                 [sequelize.fn('EXTRACT', sequelize.literal('MONTH FROM "createdAt"')), 'month'],
-                
-                // 2. Tính tổng cột 'tong_thanh_toan' và đặt tên là 'total'.
                 [sequelize.fn('SUM', sequelize.col('tong_thanh_toan')), 'total']
             ],
-            // Điều kiện lọc
             where: {
-                trang_thai_don_hang: 'delivered', // Chỉ tính đơn hàng thành công
-                // Chỉ lấy các đơn hàng trong năm hiện tại
-                [Op.and]: [
-                    sequelize.where(sequelize.fn('EXTRACT', sequelize.literal('YEAR FROM "createdAt"')), currentYear)
-                ]
+                trang_thai_don_hang: completedStatus,
+                ...dateRangeWhere // Áp dụng bộ lọc thời gian
             },
-            // Nhóm kết quả lại theo tháng để hàm SUM hoạt động đúng
-            group: ['month'],
-            // Sắp xếp kết quả theo tháng tăng dần
-            order: [[sequelize.literal('month'), 'ASC']]
-        });
-        
-        // Định dạng lại dữ liệu thành một mảng 12 phần tử (tương ứng 12 tháng)
-        // để phía frontend có thể dễ dàng sử dụng để vẽ biểu đồ.
-        const formattedData = Array(12).fill(0); // Tạo một mảng 12 số 0
-        revenueData.forEach(item => {
-            const monthIndex = item.get('month') - 1; // get('month') trả về tháng từ 1-12, index của mảng từ 0-11
-            // Gán giá trị doanh thu vào đúng vị trí tháng trong mảng
-            formattedData[monthIndex] = parseFloat(item.get('total'));
+            group: ['year', 'month'],
+            order: [[sequelize.col('year'), 'ASC'], [sequelize.col('month'), 'ASC']],
+            raw: true
         });
 
-        response.status(200).json(formattedData);
+        // --- BƯỚC 3: LẤY CÁC DỮ LIỆU THỐNG KÊ KHÁC ---
+        
+        // Tạo điều kiện WHERE cho các câu lệnh JOIN phức tạp
+        const joinWhereCondition = {
+            trang_thai_don_hang: completedStatus,
+            ...dateRangeWhere
+        };
+
+        // Top 5 sản phẩm bán chạy nhất trong khoảng thời gian đã chọn
+        const topSellingProducts = await db.OrderItem.findAll({
+            attributes: [
+                'product_id',
+                [sequelize.fn('SUM', sequelize.col('so_luong_dat')), 'total_sold']
+            ],
+            include: [
+                { model: db.Product, as: 'product', attributes: ['ten_sach'] },
+                {
+                    model: db.Order, as: 'order',
+                    where: joinWhereCondition,
+                    attributes: [] // Không cần lấy cột nào từ bảng Order
+                }
+            ],
+            group: ['product_id', 'product.id'],
+            order: [[sequelize.fn('SUM', sequelize.col('so_luong_dat')), 'DESC']],
+            limit: 5,
+            raw: true,
+            nest: true,
+        });
+
+        // Top 5 khách hàng tiềm năng trong khoảng thời gian đã chọn
+        const topCustomers = await db.Order.findAll({
+            attributes: [
+                'user_id',
+                [sequelize.fn('COUNT', sequelize.col('Order.id')), 'order_count'],
+            ],
+            include: [{
+                model: db.User, as: 'user',
+                attributes: ['ho_ten', 'email']
+            }],
+            where: joinWhereCondition,
+            group: ['user_id', 'user.id'],
+            order: [[sequelize.fn('COUNT', sequelize.col('Order.id')), 'DESC']],
+            limit: 5,
+            raw: true,
+            nest: true,
+        });
+
+        // --- BƯỚC 4: GỬI PHẢN HỒI VỀ CHO CLIENT ---
+        res.status(200).json({
+            revenueByMonth,
+            topSellingProducts,
+            topCustomers
+        });
+
     } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu doanh thu theo tháng:", error);
-        response.status(500).json({ message: "Lỗi server.", error: error.message });
+        // Ghi log lỗi ra console của server để debug
+        console.error("Lỗi khi lấy dữ liệu dashboard:", error);
+        // Trả về lỗi 500 cho client
+        res.status(500).json({ message: "Lỗi server khi lấy dữ liệu thống kê." });
     }
 };
 
 module.exports = {
-    getDashboardOverview,
-    getRevenueByMonth
+    getDashboardStats
 };

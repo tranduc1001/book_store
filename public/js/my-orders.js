@@ -57,41 +57,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tbody>
         `;
 
-        orders.forEach(order => {
-            const orderDate = new Date(order.createdAt).toLocaleDateString('vi-VN');
-            const statusClass = getStatusClass(order.trang_thai_don_hang);
+       orders.forEach(order => {
+        const orderDate = new Date(order.createdAt).toLocaleDateString('vi-VN');
+        const totalAmount = parseFloat(order.tong_thanh_toan).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+        const paymentStatus = order.trang_thai_thanh_toan === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán';
+        
+        // --- SỬA LẠI LOGIC Ở ĐÂY ---
 
-            ordersHTML += `
-                <tr>
-                    <th scope="row">#${order.id}</th>
-                    <td>${orderDate}</td>
-                    <td>${parseFloat(order.tong_thanh_toan).toLocaleString('vi-VN')}đ</td>
-                    <td><span class="badge ${statusClass}">${order.trang_thai_don_hang}</span></td>
-                    <td>${order.trang_thai_thanh_toan ? 'Đã thanh toán' : 'Chưa thanh toán'}</td>
-                    <td>
-                        <a href="/orders/${order.id}" class="btn btn-sm btn-info">Xem chi tiết</a>
-                    </td>
-                </tr>
-            `;
-        });
+        // 1. Gọi hàm để lấy object chứa thông tin trạng thái
+        const statusInfo = getStatusClass(order.trang_thai_don_hang);
 
+        // 2. Dựng chuỗi HTML cho badge từ thông tin trong object
+        // Lưu ý: Dùng `text-bg-` là class chuẩn của Bootstrap 5 cho badge có nền màu
+        const statusBadgeHTML = `<span class="badge rounded-pill text-bg-${statusInfo.className}">${statusInfo.text}</span>`;
+
+        // 3. Sử dụng biến statusBadgeHTML trong chuỗi HTML của hàng
         ordersHTML += `
-                </tbody>
-            </table>
+            <tr>
+                <th scope="row">#${order.id}</th>
+                <td>${orderDate}</td>
+                <td>${totalAmount}</td>
+                <td>${statusBadgeHTML}</td> 
+                <td>${paymentStatus}</td>
+                <td>
+                    <a href="/orders/${order.id}" class="btn btn-sm btn-info">Xem chi tiết</a>
+                </td>
+            </tr>
         `;
-        ordersContainer.innerHTML = ordersHTML;
-    }
+    });
+
+    ordersHTML += `
+            </tbody>
+        </table>
+    `;
+    ordersContainer.innerHTML = ordersHTML;
+}
+
 
     // Hàm để lấy class CSS cho từng trạng thái
     function getStatusClass(status) {
         switch (status) {
-            case 'pending': return 'bg-secondary';
-            case 'confirmed': return 'bg-info';
-            case 'shipping': return 'bg-primary';
-            case 'delivered': return 'bg-success';
-            case 'cancelled': return 'bg-danger';
-            default: return 'bg-light text-dark';
-        }
+        case 'pending':
+            return { className: 'secondary', text: 'Chờ xác nhận' };
+        case 'confirmed':
+            return { className: 'info', text: 'Đã xác nhận' };
+        case 'shipping':
+            return { className: 'primary', text: 'Đang giao' };
+        case 'delivered':
+            return { className: 'success', text: 'Đã giao' };
+        case 'cancelled':
+            return { className: 'danger', text: 'Đã hủy' };
+        default:
+            return { className: 'light text-dark', text: status }; // Hiển thị trạng thái gốc nếu không khớp
+    }
     }
 
     // Chạy hàm fetch lần đầu
