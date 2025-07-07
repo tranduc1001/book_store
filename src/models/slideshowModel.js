@@ -18,7 +18,7 @@ const Slideshow = sequelize.define('Slideshow', {
     image_url: {
         type: DataTypes.STRING,
         allowNull: false,
-        comment: 'Đường dẫn đến ảnh của slide, ví dụ: /uploads/slides/banner-tet-2024.jpg'
+        comment: 'Đường dẫn đến ảnh của slide, '
     },
 
     // Cột 'tieu_de': Tiêu đề chính hiển thị trên slide (nếu có)

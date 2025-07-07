@@ -1,7 +1,7 @@
 // File: /src/controllers/promotionController.js
 
 // Import các model cần thiết và các toán tử của Sequelize
-const { Promotion, Product, Category } = require('../models');
+const { Promotion, Product, Category, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -120,12 +120,22 @@ const applyPromotion = async (request, response) => {
         // Ở bước này, chúng ta chỉ cần tính toán dựa trên tổng tiền để hiển thị cho người dùng.
         let discountAmount = 0;
         if (promo.loai_giam_gia === 'percentage') {
-            discountAmount = (parseFloat(currentSubtotal) * parseFloat(promo.gia_tri_giam)) / 100;
+            // Tính số tiền giảm thô theo %
+            const rawDiscount = (parseFloat(currentSubtotal) * parseFloat(promo.gia_tri_giam)) / 100;
+            const maxDiscount = parseFloat(promo.giam_toi_da);
+
+            // Nếu có thiết lập "giảm tối đa", hãy so sánh và lấy số nhỏ hơn
+            if (maxDiscount > 0) {
+                discountAmount = Math.min(rawDiscount, maxDiscount);
+            } else {
+                // Nếu không có giới hạn, lấy số tiền giảm thô
+                discountAmount = rawDiscount;
+            }
         } else { // 'fixed_amount'
             discountAmount = parseFloat(promo.gia_tri_giam);
         }
         
-        // Đảm bảo số tiền giảm không vượt quá tổng tiền của giỏ hàng
+        // Đảm bảo cuối cùng số tiền giảm không được lớn hơn tổng tiền của giỏ hàng
         discountAmount = Math.min(discountAmount, parseFloat(currentSubtotal));
         
         // 4. TRẢ VỀ KẾT QUẢ
@@ -141,6 +151,37 @@ const applyPromotion = async (request, response) => {
         response.status(500).json({ message: "Lỗi server.", error: error.message });
     }
 };
+/**
+ * @description     User: Lấy các mã khuyến mãi có thể sử dụng được
+ * @route           GET /api/promotions/available
+ * @access          Private
+ */
+const getAvailablePromotions = async (request, response) => {
+    try {
+        // Lấy tổng tiền tạm tính của giỏ hàng từ query string
+        const currentSubtotal = parseFloat(request.query.subtotal || 0);
+
+        const availablePromos = await Promotion.findAll({
+            where: {
+                trang_thai: true,
+                ngay_bat_dau: { [Op.lte]: new Date() },
+                ngay_ket_thuc: { [Op.gte]: new Date() },
+                // Chỉ lấy các mã có điều kiện đơn hàng tối thiểu <= tổng tiền hiện tại
+                dieu_kien_don_hang_toi_thieu: { [Op.lte]: currentSubtotal },
+                // Chỉ lấy các mã chưa hết lượt sử dụng
+                [Op.or]: [
+                    { so_luong_gioi_han: null },
+                    { so_luong_gioi_han: { [Op.gt]: sequelize.col('so_luong_da_su_dung') } }
+                ]
+            },
+            order: [['createdAt', 'DESC']]
+        });
+        response.status(200).json(availablePromos);
+    } catch (error) {
+        console.error("Lỗi khi lấy khuyến mãi hợp lệ:", error);
+        response.status(500).json({ message: "Lỗi server." });
+    }
+};
 
 
 module.exports = {
@@ -148,5 +189,6 @@ module.exports = {
     getAllPromotions,
     updatePromotion,
     deletePromotion,
-    applyPromotion
+    applyPromotion,
+    getAvailablePromotions
 };

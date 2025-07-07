@@ -40,6 +40,7 @@ const ebookRouter = require('./src/routes/ebookRouter');
 const roleRouter = require('./src/routes/roleRouter'); 
 const receiptRouter = require('./src/routes/receiptRouter');
 const postRouter = require('./src/routes/postRouter');
+const provinceRouter = require('./src/routes/provinceRouter');
 
 
 
@@ -90,6 +91,7 @@ app.use('/api/ebooks', ebookRouter);
 app.use('/api/roles', roleRouter);
 app.use('/api/receipts', receiptRouter);
 app.use('/api/posts', postRouter);
+app.use('/api/provinces', provinceRouter);
 // B. Gắn router cho các trang quản trị (Admin)
 app.use('/admin', adminRouter);
 

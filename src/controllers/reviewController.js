@@ -10,8 +10,8 @@ const { Op } = require('sequelize');
  * @access          Private (Yêu cầu đăng nhập)
  */
 const createReview = async (request, response) => {
-    const { productId } = request.params;
-    const { rating, comment, parentId } = request.body;
+    const productId = request.params.id;
+    const { rating, comment } = request.body;
     const userId = request.user.id;
 
     try {
@@ -33,7 +33,7 @@ const createReview = async (request, response) => {
                 // Join với OrderItem để tìm xem trong các đơn hàng đó có sản phẩm này không
                 include: {
                     model: OrderItem,
-                    as: 'items',
+                    as: 'orderItems',
                     where: { product_id: productId }
                 }
             });
@@ -59,15 +59,21 @@ const createReview = async (request, response) => {
         }
         
         // Nếu tất cả điều kiện hợp lệ, hoặc nếu người dùng chỉ bình luận (không có rating), thì tạo review.
-        const review = await Review.create({
+        const newReview = await Review.create({
             product_id: parseInt(productId),
             user_id: userId,
             rating: rating,
             comment: comment,
-            parent_id: parentId || null // Nếu có parentId thì là reply, không thì là bình luận gốc
+        });
+        const reviewWithUser = await Review.findByPk(newReview.id, {
+            include: {
+                model: User,
+                as: 'User',
+                attributes: ['ho_ten']
+            }
         });
 
-        response.status(201).json(review);
+        response.status(201).json(reviewWithUser);
     } catch (error) {
         console.error("Lỗi khi tạo đánh giá/bình luận:", error);
         response.status(500).json({ message: "Lỗi server khi tạo đánh giá.", error: error.message });
@@ -84,24 +90,18 @@ const getProductReviews = async (request, response) => {
         // Lấy tất cả các review/comment gốc (không có parent_id)
         const reviews = await Review.findAll({
             where: {
-                product_id: request.params.productId,
-                parent_id: null
+                product_id: request.params.id,
+                //parent_id: null
             },
             order: [['createdAt', 'DESC']], // Hiển thị bình luận mới nhất lên đầu
             // Include để lấy thông tin người dùng và các câu trả lời (replies)
             include: [
                 {
-                    model: User, // Lấy thông tin người viết review
+                    model: User,
+                    as: 'User', // Lấy thông tin người viết review
                     attributes: ['id', 'ho_ten'] // Chỉ lấy các trường cần thiết
                 },
-                {
-                    model: Review, // Lấy các câu trả lời (là các review khác có parent_id trỏ đến review hiện tại)
-                    as: 'Replies',
-                    include: { // Trong mỗi reply, lại lấy thông tin người trả lời
-                        model: User,
-                        attributes: ['id', 'ho_ten']
-                    }
-                }
+                
             ]
         });
         
@@ -137,32 +137,32 @@ const deleteReviewByAdmin = async (request, response) => {
         response.status(500).json({ message: "Lỗi server.", error: error.message });
     }
 };
-/**
- * @description     Lấy tất cả bình luận/đánh giá của một sản phẩm cụ thể.
- * @route           GET /api/products/:productId/reviews
- * @access          Public
- */
-const getReviewsByProductId = async (request, response) => {
-    try {
-        const reviews = await Review.findAll({
-            where: { product_id: request.params.id }, // Lấy id từ params của product router
-            include: {
-                model: User,
-                as: 'User',
-                attributes: ['ho_ten', 'img'] // Chỉ lấy những thông tin cần thiết của người dùng
-            },
-            order: [['createdAt', 'DESC']]
-        });
-        response.status(200).json(reviews);
-    } catch (error) {
-        console.error("Lỗi khi lấy reviews theo sản phẩm:", error);
-        response.status(500).json({ message: "Lỗi server", error: error.message });
-    }
-};
+// /**
+//  * @description     Lấy tất cả bình luận/đánh giá của một sản phẩm cụ thể.
+//  * @route           GET /api/products/:productId/reviews
+//  * @access          Public
+//  */
+// const getReviewsByProductId = async (request, response) => {
+//     try {
+//         const reviews = await Review.findAll({
+//             where: { product_id: request.params.id }, // Lấy id từ params của product router
+//             include: {
+//                 model: User,
+//                 as: 'User',
+//                 attributes: ['ho_ten', 'img'] // Chỉ lấy những thông tin cần thiết của người dùng
+//             },
+//             order: [['createdAt', 'DESC']]
+//         });
+//         response.status(200).json(reviews);
+//     } catch (error) {
+//         console.error("Lỗi khi lấy reviews theo sản phẩm:", error);
+//         response.status(500).json({ message: "Lỗi server", error: error.message });
+//     }
+// };
 
 module.exports = { 
     createReview, 
     getProductReviews,
-    deleteReviewByAdmin,
-    getReviewsByProductId
+    deleteReviewByAdmin
+    //getReviewsByProductId
 };

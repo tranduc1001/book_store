@@ -4,6 +4,8 @@ const db = require('../models');
 const { User, Role } = require('../models');
 const { Op } = require('sequelize');
 const generateToken = require('../utils/generateToken');
+const crypto = require('crypto'); // <<< THÊM DÒNG NÀY
+const { sendPasswordResetEmail } = require('../services/emailService'); 
 
 /**
  * @description     Đăng ký một người dùng mới
@@ -116,8 +118,110 @@ const logoutUser = (req, res) => {
     });
     res.status(200).json({ message: 'Đăng xuất thành công.' });
 };
+/**
+ * @description     Quên mật khẩu, gửi email reset
+ * @route           POST /api/auth/forgotpassword
+ * @access          Public
+ */
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng với email này.' });
+        }
+
+        // Lấy token reset (phương thức này đã được thêm vào userModel)
+        const resetToken = user.getResetPasswordToken();
+        await user.save(); // Lưu token đã hash và ngày hết hạn vào DB
+
+        // Tạo URL reset, ví dụ: http://localhost:8080/reset-password/abcdef123...
+        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+
+        // Gửi email
+        await sendPasswordResetEmail(user.email, resetUrl);
+
+        res.status(200).json({ success: true, message: 'Email đã được gửi. Vui lòng kiểm tra hộp thư của bạn.' });
+
+    } catch (error) {
+        console.error('Lỗi ở forgotPassword:', error);
+        // Nếu có lỗi, xóa token đã tạo để người dùng có thể thử lại
+        if (req.user) {
+            req.user.resetPasswordToken = null;
+            req.user.resetPasswordExpire = null;
+            await req.user.save();
+        }
+        res.status(500).json({ message: 'Gửi email thất bại, vui lòng thử lại.' });
+    }
+};
+
+/**
+ * @description     Đặt lại mật khẩu
+ * @route           PUT /api/auth/resetpassword/:resettoken
+ * @access          Public
+ */
+const resetPassword = async (req, res) => {
+    try {
+        // Lấy token đã hash từ URL
+        const resetPasswordToken = crypto
+            .createHash('sha256')
+            .update(req.params.resettoken)
+            .digest('hex');
+
+        // Tìm user có token hợp lệ (chưa hết hạn)
+        const user = await User.findOne({
+            where: {
+                resetPasswordToken,
+                resetPasswordExpire: { [Op.gt]: Date.now() }, // Token còn hạn
+            },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
+        }
+
+        // Đặt mật khẩu mới
+        user.mat_khau = req.body.mat_khau;
+        // Xóa token sau khi đã sử dụng
+        user.resetPasswordToken = null;
+        user.resetPasswordExpire = null;
+        
+        // Hook beforeUpdate sẽ tự động hash mật khẩu mới
+        await user.save();
+        
+        // (Tùy chọn) Tự động đăng nhập cho người dùng sau khi reset
+          const token = generateToken(user.id, user.role_id); // Nhớ truyền cả role_id
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // true khi deploy
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 ngày
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Mật khẩu đã được cập nhật thành công.', 
+            // Cũng trả về thông tin user để client có thể lưu vào localStorage
+            user: {
+                id: user.id,
+                ho_ten: user.ho_ten,
+                email: user.email,
+                role_id: user.role_id
+            },
+            token: token // Trả về token để client có thể dùng ngay
+        });
+
+    } catch (error) {
+        console.error('Lỗi ở resetPassword:', error);
+        res.status(500).json({ message: 'Lỗi server.' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    forgotPassword,
+    resetPassword
 };

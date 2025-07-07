@@ -18,7 +18,8 @@
                 <div class="card-header">Thông tin đơn hàng</div>
                 <div class="card-body">
                     <p><strong>Ngày đặt hàng:</strong> <span id="order-date"></span></p>
-                    <p><strong>Trạng thái:</strong> <span id="order-status" class="badge bg-info text-dark"></span></p>
+                    <p><strong>Trạng thái đơn hàng:</strong> <span id="order-status-badge"></span></p> <!-- Đổi ID -->
+                    <p><strong>Trạng thái thanh toán:</strong> <span id="payment-status-badge"></span></p> <!-- Dòng mới -->
                 </div>
             </div>
 
@@ -61,6 +62,11 @@
                                 <li class="list-group-item d-flex justify-content-between">
                                     <span>Tạm tính:</span>
                                     <strong id="subtotal"></strong>
+                                </li>
+                                <!-- Dòng mới hiển thị giảm giá (nếu có) -->
+                                <li id="discount-row" class="list-group-item d-flex justify-content-between text-success" style="display: none;">
+                                    <span>Giảm giá:</span>
+                                    <strong id="discount-amount"></strong>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between">
                                     <span>Phí vận chuyển:</span>

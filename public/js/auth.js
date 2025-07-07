@@ -57,7 +57,10 @@ if (loginForm) {
         const email = document.getElementById('email').value;
         const mat_khau = document.getElementById('mat_khau').value;
         const alertBox = document.getElementById('alertBox');
-         console.log('CHECK 1 - Đang thử đăng nhập với email:', email); 
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -96,11 +99,89 @@ if (loginForm) {
                 alertBox.className = 'alert alert-danger';
                 alertBox.textContent = data.message || 'Đã có lỗi xảy ra.';
                 alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Đăng Nhập';
             }
         } catch (error) {
             console.error('Lỗi:', error);
             alertBox.className = 'alert alert-danger';
             alertBox.textContent = 'Không thể kết nối đến server.';
+            alertBox.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Đăng Nhập';
+        }
+    });
+}
+// Xử lý form quên mật khẩu
+const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+if (forgotPasswordForm) {
+    forgotPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const alertBox = document.getElementById('alertBox');
+        const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang gửi...';
+
+        try {
+            const res = await fetch('/api/auth/forgotpassword', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            alertBox.className = 'alert alert-success';
+            alertBox.innerHTML = data.message;
+            alertBox.style.display = 'block';
+
+        } catch (error) {
+            alertBox.className = 'alert alert-danger';
+            alertBox.innerHTML = error.message || 'Có lỗi xảy ra.';
+            alertBox.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Gửi liên kết';
+        }
+    });
+}
+
+// Xử lý form reset mật khẩu
+const resetPasswordForm = document.getElementById('resetPasswordForm');
+if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const alertBox = document.getElementById('alertBox');
+
+        if (password !== confirmPassword) {
+            alertBox.className = 'alert alert-danger';
+            alertBox.innerHTML = 'Mật khẩu không khớp.';
+            alertBox.style.display = 'block';
+            return;
+        }
+        
+        // Lấy token từ URL
+        const resetToken = window.location.pathname.split('/')[2];
+
+        try {
+            const res = await fetch(`/api/auth/resetpassword/${resetToken}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mat_khau: password }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            
+            await Swal.fire('Thành công!', 'Mật khẩu của bạn đã được cập nhật.', 'success');
+            window.location.href = '/login';
+
+        } catch (error) {
+            alertBox.className = 'alert alert-danger';
+            alertBox.innerHTML = error.message || 'Có lỗi xảy ra.';
             alertBox.style.display = 'block';
         }
     });

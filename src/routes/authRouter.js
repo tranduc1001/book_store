@@ -1,11 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, logoutUser } = require('../controllers/authController');
+const { registerUser,
+        loginUser,
+        logoutUser,
+        forgotPassword, // import hàm mới
+        resetPassword 
+    } = require('../controllers/authController');
 
-// http://localhost:8080/api/auth/register
 router.post('/register', registerUser);
-
-// http://localhost:8080/api/auth/login
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
+
+// <<< THÊM 2 ROUTE MỚI >>>
+router.post('/forgotpassword', forgotPassword);
+router.put('/resetpassword/:resettoken', resetPassword);
+
 module.exports = router;

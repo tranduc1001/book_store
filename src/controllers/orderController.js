@@ -2,9 +2,9 @@
 const db = require('../models');
 const { sequelize } = db;
 const { Op } = require('sequelize'); // Lấy sequelize và Op từ db object cho nhất quán
-
 // Import service gửi email
 const { sendOrderConfirmationEmail, sendOutOfStockApologyEmail } = require('../services/emailService');
+const { createMomoPayment } = require('../services/momoService');
 
 /**
  * @description     Tạo một đơn hàng mới từ giỏ hàng của người dùng.
@@ -116,7 +116,7 @@ const createOrder = async (request, response) => {
             sdt_nguoi_nhan,
             dia_chi_giao_hang,
             phuong_thuc_thanh_toan,
-            trang_thai_don_hang: 'pending',
+            trang_thai_don_hang:  phuong_thuc_thanh_toan === 'momo' ? 'pending_payment' : 'pending',
             tong_tien_hang,
             phi_van_chuyen,
             so_tien_giam_gia: discountAmount,
@@ -144,14 +144,32 @@ const createOrder = async (request, response) => {
         if (promotion) {
             await promotion.increment('so_luong_da_su_dung', { by: 1, transaction: t });
         }
-        
-        // === BƯỚC 6: DỌN DẸP GIỎ HÀNG VÀ COMMIT TRANSACTION ===
-        await db.CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
-        await t.commit();
+          // <<< 3. XỬ LÝ THANH TOÁN DỰA TRÊN PHƯƠNG THỨC >>>
+        if (phuong_thuc_thanh_toan === 'momo') {
+            const redirectUrl = `${process.env.CLIENT_URL}/my-orders/${newOrder.id}`; // Chuyển về trang chi tiết đơn hàng
+            const ipnUrl = `${process.env.SERVER_URL}/api/orders/momo-ipn`;
+            
+            const momoResponse = await createMomoPayment({
+                orderId: `BOOKSTORE_${newOrder.id}_${new Date().getTime()}`, // Tạo mã đơn hàng duy nhất cho MoMo
+                amount: tong_thanh_toan,
+                orderInfo: `Thanh toan cho don hang #${newOrder.id}`,
+                redirectUrl,
+                ipnUrl
+            });
 
-        // === BƯỚC 7: GỬI EMAIL XÁC NHẬN VÀ PHẢN HỒI CHO CLIENT ===
-        sendOrderConfirmationEmail(newOrder.email_nguoi_nhan, newOrder.toJSON());
-        response.status(201).json(newOrder);
+            if (momoResponse && momoResponse.payUrl) {
+                await db.CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
+                await t.commit();
+                return response.status(200).json({ payUrl: momoResponse.payUrl });
+            } else {
+                throw new Error("Không thể tạo yêu cầu thanh toán MoMo.");
+            }
+        } else { // Xử lý cho COD
+            await db.CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
+            await t.commit();
+            sendOrderConfirmationEmail(newOrder.email_nguoi_nhan, newOrder.toJSON());
+            return response.status(201).json(newOrder);
+        }
 
     } catch (error) {
         // Nếu có lỗi, hủy bỏ tất cả các thao tác đã thực hiện trong transaction
@@ -162,6 +180,48 @@ const createOrder = async (request, response) => {
     }
 };
 
+/**
+ * @description     Nhận thông báo kết quả thanh toán từ MoMo (IPN - Instant Payment Notification)
+ * @route           POST /api/orders/momo-ipn
+ * @access          Public (MoMo server calls this)
+ */
+const handleMomoIPN = async (request, response) => {
+    // Logic xác thực chữ ký của MoMo sẽ được thêm vào sau để đảm bảo an toàn
+    // const isValid = verifyIPN(request.body);
+    // if (!isValid) {
+    //     return response.status(400).json({ message: "Invalid signature" });
+    // }
+
+    const { orderId, message, resultCode } = request.body;
+    
+    // Lấy ID đơn hàng gốc của bạn từ chuỗi orderId của MoMo
+    const originalOrderId = orderId.split('_')[1];
+
+    try {
+        if (resultCode === 0) { // Thanh toán thành công
+            const order = await db.Order.findByPk(originalOrderId);
+            if (order) {
+                order.trang_thai_don_hang = 'pending'; // Chuyển sang trạng thái "chờ xác nhận"
+                order.trang_thai_thanh_toan = true; // Đánh dấu đã thanh toán
+                await order.save();
+                
+                // Gửi email xác nhận
+                sendOrderConfirmationEmail(order.email_nguoi_nhan, order.toJSON());
+            }
+        } else { // Thanh toán thất bại
+            // (Tùy chọn) Có thể cập nhật trạng thái đơn hàng thành "payment_failed"
+            console.log(`Thanh toán MoMo cho đơn hàng ${originalOrderId} thất bại: ${message}`);
+        }
+        
+        // Luôn trả về 204 để báo cho MoMo đã nhận được thông báo
+        response.status(204).send();
+
+    } catch (error) {
+        console.error("Lỗi xử lý MoMo IPN:", error);
+        // Nếu có lỗi, cũng nên trả về 204 để MoMo không gửi lại
+        response.status(204).send();
+    }
+};
 /**
  * @description     Lấy danh sách các đơn hàng của người dùng đang đăng nhập.
  * @route           GET /api/orders/myorders
@@ -308,7 +368,8 @@ const getAllOrders = async (req, res) => {
 };
 
 module.exports = { 
-    createOrder, 
+    createOrder,
+    handleMomoIPN,
     getMyOrders, 
     getOrderById, 
     updateOrderStatus,

@@ -60,31 +60,28 @@ document.addEventListener('DOMContentLoaded', () => {
        orders.forEach(order => {
         const orderDate = new Date(order.createdAt).toLocaleDateString('vi-VN');
         const totalAmount = parseFloat(order.tong_thanh_toan).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-        const paymentStatus = order.trang_thai_thanh_toan === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán';
-        
-        // --- SỬA LẠI LOGIC Ở ĐÂY ---
+         // Lấy thông tin trạng thái đơn hàng (text và class)
+            const statusInfo = getStatusInfo(order.trang_thai_don_hang);
+            // <<< LẤY THÔNG TIN TRẠNG THÁI THANH TOÁN >>>
+            const paymentStatusInfo = getPaymentStatusInfo(order.trang_thai_thanh_toan);
 
-        // 1. Gọi hàm để lấy object chứa thông tin trạng thái
-        const statusInfo = getStatusClass(order.trang_thai_don_hang);
+            const statusBadgeHTML = `<span class="badge rounded-pill ${statusInfo.className}">${statusInfo.text}</span>`;
+            // <<< TẠO BADGE CHO TRẠNG THÁI THANH TOÁN >>>
+            const paymentBadgeHTML = `<span class="badge rounded-pill ${paymentStatusInfo.className}">${paymentStatusInfo.text}</span>`;
 
-        // 2. Dựng chuỗi HTML cho badge từ thông tin trong object
-        // Lưu ý: Dùng `text-bg-` là class chuẩn của Bootstrap 5 cho badge có nền màu
-        const statusBadgeHTML = `<span class="badge rounded-pill text-bg-${statusInfo.className}">${statusInfo.text}</span>`;
-
-        // 3. Sử dụng biến statusBadgeHTML trong chuỗi HTML của hàng
-        ordersHTML += `
-            <tr>
-                <th scope="row">#${order.id}</th>
-                <td>${orderDate}</td>
-                <td>${totalAmount}</td>
-                <td>${statusBadgeHTML}</td> 
-                <td>${paymentStatus}</td>
-                <td>
-                    <a href="/orders/${order.id}" class="btn btn-sm btn-info">Xem chi tiết</a>
-                </td>
-            </tr>
-        `;
-    });
+            ordersHTML += `
+                <tr>
+                    <th scope="row">#${order.id}</th>
+                    <td>${orderDate}</td>
+                    <td>${totalAmount}</td>
+                    <td>${statusBadgeHTML}</td> 
+                    <td>${paymentBadgeHTML}</td> <!-- Sử dụng badge mới -->
+                    <td>
+                        <a href="/orders/${order.id}" class="btn btn-sm btn-info text-white">Xem chi tiết</a>
+                    </td>
+                </tr>
+            `;
+        });
 
     ordersHTML += `
             </tbody>
@@ -95,21 +92,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Hàm để lấy class CSS cho từng trạng thái
-    function getStatusClass(status) {
-        switch (status) {
+   function getStatusInfo(status) {
+    switch (status) {
         case 'pending':
-            return { className: 'secondary', text: 'Chờ xác nhận' };
+            return { text: 'Chờ xác nhận', className: 'text-bg-secondary' };
+        case 'pending_payment': 
+            return { text: 'Chờ thanh toán', className: 'text-bg-warning' };
         case 'confirmed':
-            return { className: 'info', text: 'Đã xác nhận' };
+            return { text: 'Đã xác nhận', className: 'text-bg-primary' };
         case 'shipping':
-            return { className: 'primary', text: 'Đang giao' };
+            return { text: 'Đang giao', className: 'text-bg-info' }; // Bỏ text-dark, text-bg-info tự xử lý
         case 'delivered':
-            return { className: 'success', text: 'Đã giao' };
+            return { text: 'Đã giao', className: 'text-bg-success' };
         case 'cancelled':
-            return { className: 'danger', text: 'Đã hủy' };
+            return { text: 'Đã hủy', className: 'text-bg-danger' };
         default:
-            return { className: 'light text-dark', text: status }; // Hiển thị trạng thái gốc nếu không khớp
+            return { text: status, className: 'text-bg-light' };
     }
+}
+      // <<< THÊM HÀM MỚI ĐỂ XỬ LÝ TRẠNG THÁI THANH TOÁN >>>
+    function getPaymentStatusInfo(isPaid) {
+        if (isPaid) { // isPaid là true
+            return { text: 'Đã thanh toán', className: 'bg-success' };
+        } else { // isPaid là false
+            return { text: 'Chưa thanh toán', className: 'bg-warning text-dark' };
+        }
     }
 
     // Chạy hàm fetch lần đầu

@@ -34,7 +34,7 @@ const formatCurrency = (amount) => {
 const sendOrderConfirmationEmail = async (toEmail, orderDetails) => {
     // 2. Tạo nội dung email (mail options)
     const mailOptions = {
-        from: `"Thiên Long Book" <${process.env.EMAIL_USER}>`, // Tên người gửi và địa chỉ email
+        from: `"Book Zone " <${process.env.EMAIL_USER}>`, // Tên người gửi và địa chỉ email
         to: toEmail, // Địa chỉ email của người nhận
         subject: `Xác nhận đơn hàng #${orderDetails.id}`, // Tiêu đề của email
         
@@ -101,6 +101,35 @@ const sendOutOfStockApologyEmail = async (toEmail, customerInfo, product) => {
         console.error(`❌ Lỗi khi gửi email xin lỗi hết hàng tới ${toEmail}:`, error);
     }
 };
+/**
+ * Gửi email chứa link reset mật khẩu.
+ * @param {string} toEmail - Email của người dùng.
+ * @param {string} resetUrl - URL đầy đủ để reset mật khẩu.
+ */
+const sendPasswordResetEmail = async (toEmail, resetUrl) => {
+    const mailOptions = {
+        from: `"Book Zone" <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject: 'Yêu cầu đặt lại mật khẩu Book Zone',
+        html: `
+            <h1>Bạn đã yêu cầu đặt lại mật khẩu</h1>
+            <p>Vui lòng nhấn vào liên kết dưới đây để đặt lại mật khẩu của bạn. Liên kết này sẽ hết hạn sau 10 phút.</p>
+            <a href="${resetUrl}" style="background-color: #0d6efd; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Đặt lại mật khẩu
+            </a>
+            <p>Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.</p>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Email reset mật khẩu đã được gửi tới ${toEmail}`);
+    } catch (error) {
+        console.error(`❌ Lỗi khi gửi email reset mật khẩu tới ${toEmail}:`, error);
+        // Ném lỗi ra để controller có thể bắt và xử lý
+        throw new Error('Không thể gửi email reset mật khẩu.'); 
+    }
+};
 // ==========================================================
 
 
@@ -108,7 +137,6 @@ const sendOutOfStockApologyEmail = async (toEmail, customerInfo, product) => {
 module.exports = {
     sendOrderConfirmationEmail,
     sendOutOfStockApologyEmail, // <<< THÊM HÀM MỚI VÀO EXPORT
-    // Trong tương lai, bạn có thể thêm các hàm khác vào đây, ví dụ:
-    // sendPasswordResetEmail,
+    sendPasswordResetEmail,
     // sendWelcomeEmail,
 };

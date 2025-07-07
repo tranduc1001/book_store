@@ -5,8 +5,9 @@ const express = require('express');
 
 // 2. Import các hàm controller từ reviewController
 const {
-    deleteReviewByAdmin,
-    // (Trong tương lai có thể thêm các hàm khác như getAllReviewsByAdmin)
+    createReview, 
+    getProductReviews,
+    deleteReviewByAdmin
 } = require('../controllers/reviewController');
 
 // 3. Import các middleware bảo vệ
@@ -25,6 +26,9 @@ router.use(protect, admin);
 router.route('/:id')
     .delete(deleteReviewByAdmin);
 
+router.route('/:productId/reviews')
+    .get(getProductReviews)
+    .post(protect, createReview);
 // Trong tương lai, có thể thêm route để Admin xem tất cả các review
 // router.route('/').get(getAllReviewsByAdmin);
 

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getStatusBadge = (status) => {
         const statusMap = {
             pending: { text: 'Chờ xác nhận', class: 'bg-warning text-dark' },
+            pending_payment: { text: 'Chờ thanh toán', class: 'bg-warning text-dark' },
             confirmed: { text: 'Đã xác nhận', class: 'bg-info' },
             shipping: { text: 'Đang giao', class: 'bg-primary' },
             delivered: { text: 'Hoàn thành', class: 'bg-success' },

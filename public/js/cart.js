@@ -14,16 +14,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === BƯỚC 1: LẤY CÁC ELEMENT HTML CẦN THIẾT ===
     const cartItemsContainer = document.getElementById('cart-items-container');
-    
+      if (!cartItemsContainer) {
+        // Nếu không phải trang giỏ hàng, dừng thực thi ngay lập tức
+        return; 
+    }
+    sessionStorage.removeItem('promoCodeToCheckout');
+    sessionStorage.removeItem('discountAmountApplied');
     // Các element mới cho phần tóm tắt đơn hàng
     const subtotalEl = document.getElementById('cart-subtotal');
     const shippingFeeEl = document.getElementById('shipping-fee');
     const discountRow = document.getElementById('discount-row');
     const discountAmountEl = document.getElementById('discount-amount');
     const finalTotalEl = document.getElementById('final-total');
+    // Các element cho phần khuyến mãi
     const applyBtn = document.getElementById('apply-promo-btn');
     const promoInput = document.getElementById('promo-code-input');
     const promoMessage = document.getElementById('promo-message');
+    // <<< LẤY THÊM ELEMENT CHO CHỨC NĂNG HỦY >>>
+    const promoTextMessage = document.getElementById('promo-text-message');
+    const removePromoBtn = document.getElementById('remove-promo-btn');
 
     // Biến để lưu trữ trạng thái của giỏ hàng và khuyến mãi trên toàn trang.
     let currentCart = null;
@@ -44,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCartItems(items) {
         cartItemsContainer.innerHTML = ''; // Luôn xóa nội dung cũ trước khi vẽ lại.
 
-        if (!items || items.length === 0) {
-            cartItemsContainer.innerHTML = '<p class="text-center">Giỏ hàng của bạn đang trống.</p>';
+         if (!items || items.length === 0) {
+            cartItemsContainer.innerHTML = '<div class="text-center p-5"><p>Giỏ hàng của bạn đang trống.</p><a href="/products" class="btn btn-primary">Tiếp tục mua sắm</a></div>';
             return;
         }
 
@@ -64,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input min="1" max="${item.product.so_luong_ton_kho}" value="${item.so_luong}" type="number"
                             class="form-control form-control-sm item-quantity" data-item-id="${item.id}" />
                     </div>
+                    
                     <div class="col-md-3 col-lg-2 col-xl-2 offset-lg-1">
                         <h6 class="mb-0">${itemTotal.toLocaleString('vi-VN')}đ</h6>
                     </div>
@@ -85,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Nó sẽ được gọi mỗi khi có thay đổi trong giỏ hàng hoặc áp dụng khuyến mãi.
      */
     function updateOrderSummary() {
-        if (!currentCart || !currentCart.items) {
+        if (!currentCart || !currentCart.items|| currentCart.items.length === 0)  {
             // Nếu không có giỏ hàng, reset mọi thứ về 0.
             subtotalEl.textContent = formatCurrency(0);
             shippingFeeEl.textContent = formatCurrency(0);
@@ -202,14 +212,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function addEventListenersToCartItems() {
         // Gắn sự kiện cho tất cả các nút "Xóa"
         document.querySelectorAll('.remove-item-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const buttonElement = event.target.closest('button');
-                const itemId = buttonElement.dataset.itemId;
-                if (confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-                    removeItemFromCart(itemId);
-                }
-            });
-        });
+        button.addEventListener('click', (event) => {
+        const buttonElement = event.target.closest('button');
+        const itemId = buttonElement.dataset.itemId;
+
+        // SỬ DỤNG SWEETALERT2 ĐỂ THAY THẾ CONFIRM
+        Swal.fire({
+            title: 'Bạn chắc chắn?',
+            text: "Bạn sẽ không thể hoàn tác hành động này!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33', // Màu đỏ cho nút xóa
+            cancelButtonColor: '#3085d6', // Màu xanh cho nút hủy
+            confirmButtonText: 'Vâng, xóa nó!',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            // Nếu người dùng nhấn vào nút "Vâng, xóa nó!"
+            if (result.isConfirmed) {
+                // Gọi hàm để xóa sản phẩm
+                removeItemFromCart(itemId);
+            }
+        })
+    });
+});
+
 
         // Gắn sự kiện cho tất cả các ô input số lượng
         document.querySelectorAll('.item-quantity').forEach(input => {
@@ -228,15 +254,16 @@ document.addEventListener('DOMContentLoaded', () => {
         applyBtn.addEventListener('click', async () => {
             const promoCode = promoInput.value.trim().toUpperCase();
             if (!promoCode) {
-                promoMessage.textContent = 'Vui lòng nhập mã khuyến mãi.';
-                promoMessage.className = 'mt-2 text-danger small';
+                promoTextMessage.textContent = 'Vui lòng nhập mã khuyến mãi.'; 
+                promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
+                removePromoBtn.style.display = 'none';
                 return;
             }
     if (!currentCart || !currentCart.items || currentCart.items.length === 0) {
-            promoMessage.textContent = 'Giỏ hàng của bạn đang trống để áp dụng mã.';
-            promoMessage.className = 'mt-2 text-danger small';
-            return;
-        }
+                promoTextMessage.textContent = 'Giỏ hàng của bạn đang trống để áp dụng mã.'; // Sửa lại thông báo lỗi
+                promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
+                return;
+    }
         // Tính toán tổng tiền hàng ngay tại thời điểm áp dụng
         const cartSubtotal = currentCart.items.reduce((sum, item) => sum + (item.so_luong * item.product.gia_bia), 0);
 
@@ -257,17 +284,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(result.message || 'Có lỗi không xác định.');
 
                 // XỬ LÝ KHI ÁP DỤNG THÀNH CÔNG
-                promoMessage.textContent = result.message;
-                promoMessage.className = 'mt-2 text-success small';
+                promoTextMessage.textContent = result.message;
+                promoMessage.className = 'mt-2 small d-flex align-items-center text-success';
+                removePromoBtn.style.display = 'inline'; // HIỆN NÚT HỦY
+
                 currentDiscountAmount = result.discountAmount; // Lưu lại số tiền được giảm
+                sessionStorage.setItem('discountAmountApplied', currentDiscountAmount);
                 updateOrderSummary(); // Cập nhật lại toàn bộ phần tóm tắt
 
             } catch (error) {
                 // XỬ LÝ KHI ÁP DỤNG THẤT BẠI
-                promoMessage.textContent = error.message;
-                promoMessage.className = 'mt-2 text-danger small';
-                currentDiscountAmount = 0; // Reset số tiền giảm về 0
-                updateOrderSummary(); // Cập nhật lại phần tóm tắt để xóa giảm giá cũ
+                promoTextMessage.textContent = error.message;
+                promoMessage.className = 'mt-2 small d-flex align-items-center text-danger';
+                removePromoBtn.style.display = 'none'; // ẨN NÚT HỦY
+                
+                currentDiscountAmount = 0;
+                sessionStorage.removeItem('discountAmountApplied');
+                updateOrderSummary();
             } finally {
                 // Luôn kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
                 applyBtn.disabled = false;
@@ -275,6 +308,132 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+ // <<< THÊM SỰ KIỆN CLICK CHO NÚT HỦY MỚI >>>
+    if (removePromoBtn) {
+        removePromoBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // 1. Reset các biến và ô input
+            promoInput.value = '';
+            currentDiscountAmount = 0;
+            // 2. Xóa thông báo và ẩn nút Hủy
+            promoTextMessage.textContent = '';
+            promoMessage.className = 'mt-2 small d-flex align-items-center';
+            removePromoBtn.style.display = 'none';
+            // 3. Xóa dữ liệu khuyến mãi khỏi sessionStorage
+            sessionStorage.removeItem('promoCodeToCheckout');
+            sessionStorage.removeItem('discountAmountApplied');
+            // 4. Cập nhật lại giao diện
+            updateOrderSummary();
+        });
+    }
+    const checkoutButton = document.querySelector('a[href="/checkout"]');
+    if (checkoutButton) {
+        checkoutButton.addEventListener('click', (e) => {
+            const promoCode = promoInput.value.trim().toUpperCase();
+            if (promoCode && currentDiscountAmount > 0) { // Thêm điều kiện: phải có giảm giá thực tế
+                sessionStorage.setItem('promoCodeToCheckout', promoCode);
+                // Số tiền giảm đã được lưu khi nhấn "Áp dụng", không cần lưu lại ở đây
+            } else {
+                // Nếu không có mã hoặc mã không hợp lệ, xóa sạch
+                sessionStorage.removeItem('promoCodeToCheckout');
+                sessionStorage.removeItem('discountAmountApplied');
+            }
+        });
+    }
+
+    const promoModal = document.getElementById('promo-modal');
+    if (promoModal) {
+    const promoListContainer = document.getElementById('promo-list-container');
+    const selectPromoBtn = document.getElementById('select-promo-btn');
+    const promoCodeInput = document.getElementById('promo-code-input');
+    const applyPromoBtn = document.getElementById('apply-promo-btn');
+     const token = localStorage.getItem('token');
+    // Biến để lưu mã KM đang được chọn trong modal
+    let selectedPromoCode = null;
+
+    // Sự kiện được kích hoạt ngay khi modal bắt đầu mở ra
+    promoModal.addEventListener('show.bs.modal', async () => {
+        // Reset trạng thái
+        selectedPromoCode = null;
+        promoListContainer.innerHTML = '<p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>';
+        
+        // Lấy tổng tiền tạm tính hiện tại của giỏ hàng
+        const subtotalText = document.getElementById('cart-subtotal').textContent;
+        const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, ''));
+        
+        try {
+            // Gọi API mới để lấy các mã KM hợp lệ
+            const response = await fetch(`/api/promotions/available?subtotal=${subtotal}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Không thể tải ưu đãi.');
+            
+            const promos = await response.json();
+            
+            // Render danh sách KM vào modal
+            promoListContainer.innerHTML = '';
+            if (promos.length === 0) {
+                promoListContainer.innerHTML = '<p class="text-center text-muted">Rất tiếc, chưa có ưu đãi nào phù hợp cho giỏ hàng của bạn.</p>';
+                return;
+            }
+
+            promos.forEach(promo => {
+                const discountText = promo.loai_giam_gia === 'percentage'
+                    ? `Giảm ${parseInt(promo.gia_tri_giam)}%`
+                    : `Giảm ${parseInt(promo.gia_tri_giam).toLocaleString('vi-VN')}đ`;
+
+                // Tạo từng item khuyến mãi
+                const promoItemHTML = `
+                    <div class="promo-item border rounded p-3 mb-2" style="cursor: pointer;" data-code="${promo.ma_khuyen_mai}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 text-success">${discountText}</h6>
+                                <small class="text-muted d-block">${promo.mo_ta}</small>
+                            </div>
+                            <i class="far fa-circle promo-check-icon fs-4 text-muted"></i>
+                        </div>
+                    </div>
+                `;
+                promoListContainer.insertAdjacentHTML('beforeend', promoItemHTML);
+            });
+
+        } catch (error) {
+            promoListContainer.innerHTML = `<p class="text-center text-danger">${error.message}</p>`;
+        }
+    });
+
+    // Xử lý sự kiện khi click chọn một mã KM trong modal
+    promoListContainer.addEventListener('click', (e) => {
+        const selectedItem = e.target.closest('.promo-item');
+        if (!selectedItem) return;
+
+        // Bỏ chọn tất cả các item khác (reset giao diện)
+        document.querySelectorAll('.promo-item').forEach(item => {
+            item.classList.remove('border-primary', 'bg-light');
+            item.querySelector('.promo-check-icon').className = 'far fa-circle promo-check-icon fs-4 text-muted';
+        });
+
+        // Đánh dấu item được chọn
+        selectedItem.classList.add('border-primary', 'bg-light');
+        selectedItem.querySelector('.promo-check-icon').className = 'fas fa-check-circle promo-check-icon fs-4 text-primary';
+        
+        // Lưu lại mã đã chọn
+        selectedPromoCode = selectedItem.dataset.code;
+    });
+
+    // Xử lý sự kiện khi nhấn nút "Áp dụng mã đã chọn"
+    selectPromoBtn.addEventListener('click', () => {
+        if (selectedPromoCode) {
+            // Điền mã đã chọn vào ô input
+            promoCodeInput.value = selectedPromoCode;
+            // Tự động nhấn nút "Áp dụng" để tái sử dụng logic có sẵn
+            applyPromoBtn.click();
+        }
+        // Đóng modal
+        const modalInstance = bootstrap.Modal.getInstance(promoModal);
+        modalInstance.hide();
+    });
+}
 
     // === BƯỚC 5: KHỞI CHẠY ===
     // Gọi hàm này lần đầu tiên để tải và hiển thị giỏ hàng khi người dùng truy cập trang.
@@ -287,8 +446,18 @@ document.addEventListener('DOMContentLoaded', () => {
 async function addToCart(productId, quantity = 1) {
     const token = localStorage.getItem('token');
     if (!token) {
-        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.');
-        window.location.href = '/login';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Vui lòng đăng nhập',
+            text: 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.',
+            showCancelButton: true,
+            confirmButtonText: 'Đăng nhập ngay',
+            cancelButtonText: 'Để sau'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/login';
+            }
+        });
         return;
     }
 
@@ -308,9 +477,10 @@ async function addToCart(productId, quantity = 1) {
                 title: 'Thành công!',
                 text: 'Đã thêm sản phẩm vào giỏ hàng.',
                 showConfirmButton: false,
-                timer: 1500
+                timer: 1500,
+                toast: true,
+                position: 'top-end'
             });
-            // Tùy chọn: cập nhật số lượng trên icon giỏ hàng ở header
         } else {
             const data = await response.json();
             Swal.fire({
@@ -321,5 +491,10 @@ async function addToCart(productId, quantity = 1) {
         }
     } catch (error) {
         console.error('Lỗi khi thêm vào giỏ hàng:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi kết nối',
+            text: 'Không thể kết nối đến máy chủ.'
+        });
     }
 }

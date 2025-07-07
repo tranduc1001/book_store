@@ -14,28 +14,10 @@ const excel = require('exceljs');
  * @access          Private/Admin
  */
 const createProduct = async (request, response) => {
-    // Lấy tất cả thông tin sản phẩm từ body của request
-    const {
-        ten_sach,
-        danh_muc_id,
-        tac_gia,
-        mo_ta_ngan,
-        gia_bia,
-        so_luong_ton_kho,
-        nha_xuat_ban,
-        nam_xuat_ban,
-        img,
-        product_type,
-        ebook_url
-    } = request.body;
-    
-    // Kiểm tra các trường bắt buộc
-    if (!ten_sach || !danh_muc_id || !gia_bia) {
-        return response.status(400).json({ message: "Tên sách, danh mục và giá bìa là các trường bắt buộc." });
-    }
-
     try {
-        const productData  = await Product.create({
+        // BƯỚC 1: LẤY DỮ LIỆU TỪ FORM (req.body) VÀ FILE (req.file)
+        // Middleware `multer` đã xử lý form multipart và điền dữ liệu vào req.body và req.file
+        const {
             ten_sach,
             danh_muc_id,
             tac_gia,
@@ -44,29 +26,59 @@ const createProduct = async (request, response) => {
             so_luong_ton_kho,
             nha_xuat_ban,
             nam_xuat_ban,
-            img,
+            so_trang,
             product_type,
             ebook_url
-        });
-         // Xử lý các giá trị mặc định hoặc null để tránh lỗi
-        productData.so_luong_ton_kho = productData.so_luong_ton_kho || 0;
-        productData.so_trang = productData.so_trang || null;
-        
-        // BƯỚC 3: XỬ LÝ FILE ẢNH ĐƯỢC UPLOAD
-        if (request.file) {
-            productData.img = '/images/' + request.file.filename;
+        } = request.body;
+
+        // BƯỚC 2: KIỂM TRA CÁC TRƯỜNG BẮT BUỘC
+        if (!ten_sach || !gia_bia || !danh_muc_id) {
+            return response.status(400).json({ message: "Tên sách, Giá bìa, và Danh mục là bắt buộc." });
         }
 
-        // BƯỚC 4: TẠO SẢN PHẨM TRONG DATABASE
-        const newProduct = await Product.create(productData);
+        // BƯỚC 3: XỬ LÝ FILE ẢNH
+        let imageUrl = '/images/placeholder.png'; // Ảnh mặc định
+        if (request.file) {
+            imageUrl = `/images/${request.file.filename}`;
+        }
+
+        // BƯỚC 4: TẠO SẢN PHẨM MỚI (MỘT LẦN DUY NHẤT)
+        const newProduct = await Product.create({
+            ten_sach,
+            mo_ta_ngan,
+            gia_bia,
+            tac_gia,
+            nha_xuat_ban,
+            danh_muc_id,
+            img: imageUrl,
+            product_type,
+            ebook_url,
+            // Xử lý các trường số để tránh lỗi 'invalid input'
+            so_luong_ton_kho: so_luong_ton_kho || 0,
+            nam_xuat_ban: nam_xuat_ban || null,
+            so_trang: so_trang || null,
+        });
+
+        // BƯỚC 5: TRẢ VỀ KẾT QUẢ THÀNH CÔNG
         response.status(201).json(newProduct);
+
     } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
+        
+        // Xử lý các lỗi validation từ Sequelize
         if (error.name === 'SequelizeValidationError') {
             const messages = error.errors.map(e => e.message);
-            return response.status(400).json({ message: 'Dữ liệu không hợp lệ.', error: messages });
+            return response.status(400).json({
+                message: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.',
+                errors: messages
+            });
         }
-        response.status(500).json({ message: "Lỗi server khi tạo sản phẩm." });
+        
+        // Xử lý các lỗi khác
+        response.status(500).json({
+            message: "Lỗi server khi tạo sản phẩm.",
+            error: error.message
+        });
     }
 };
 
@@ -343,6 +355,28 @@ const getBestsellerProducts = async (req, res) => {
         res.status(500).json({ message: "Lỗi server khi lấy sản phẩm bán chạy.", error: error.message });
     }
 };
+/**
+ * @description     Lấy danh sách duy nhất các nhà xuất bản
+ * @route           GET /api/products/publishers
+ * @access          Public
+ */
+const getAllPublishers = async (req, res) => {
+    try {
+        const publishers = await Product.findAll({
+            attributes: [
+                [sequelize.fn('DISTINCT', sequelize.col('nha_xuat_ban')), 'publisher_name']
+            ],
+            where: { nha_xuat_ban: { [Op.not]: null, [Op.ne]: '' } }, // Lọc bỏ NXB null hoặc rỗng
+            order: [['nha_xuat_ban', 'ASC']],
+            raw: true
+        });
+        // Trả về một mảng các chuỗi tên nhà xuất bản
+        res.status(200).json(publishers.map(p => p.publisher_name));
+    } catch (error) {
+        console.error("Lỗi khi lấy danh sách nhà xuất bản:", error);
+        res.status(500).json({ message: 'Lỗi server khi lấy danh sách nhà xuất bản' });
+    }
+};
 module.exports = {
     createProduct,
     getAllProducts,
@@ -350,5 +384,7 @@ module.exports = {
     updateProduct,
     deleteProduct,
     exportProductsToExcel,
-    getBestsellerProducts
+    getBestsellerProducts,
+    getAllPublishers
+    
 };

@@ -24,9 +24,8 @@ a {
 
 a:hover {
     color: #0a58ca; /* Sẫm màu hơn một chút khi di chuột qua */
-    text-decoration: underline; /* Thêm gạch chân khi hover để người dùng biết đây là link */
+    text-decoration: none; /* Giữ nguyên không gạch chân khi hover, trừ khi có class riêng */
 }
-
 
 /* --- Navbar --- */
 .navbar {
@@ -53,103 +52,186 @@ a:hover {
 /* --- Buttons --- */
 .btn {
     border-radius: 0.5rem; /* Bo góc nút mềm mại hơn */
-    padding: 0.75rem 1.25rem;
+    padding: 0.6rem 1rem; /* Chỉnh lại padding cho cân đối */
     font-weight: 600;
     transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px); /* Hiệu ứng "nhấc" nút lên khi hover */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
 }
 
-
-/* --- Product Card Styling (trang /products) --- */
-.card {
-    border: none; /* Bỏ viền card mặc định */
+/* --- Product Card Styling --- */
+/* Áp dụng cho cả trang chủ và trang sản phẩm */
+.product-card {
+    border: 1px solid #e9ecef; /* Viền xám nhạt */
     border-radius: 0.75rem; /* Bo góc card nhiều hơn */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease-in-out;
-    height: 100%; /* Đảm bảo các card có chiều cao bằng nhau */
+    background-color: #ffffff;
 }
 
-.card:hover {
+.product-card:hover {
     transform: translateY(-5px); /* Hiệu ứng "nhấc" cả card lên khi hover */
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-.card-img-top {
+.product-card .card-img-top {
     border-top-left-radius: 0.75rem;
     border-top-right-radius: 0.75rem;
-    aspect-ratio: 3 / 4; /* Giữ cho tất cả các ảnh có tỉ lệ 3:4, trông rất chuyên nghiệp */
-    object-fit: cover; /* Đảm bảo ảnh lấp đầy khung mà không bị méo */
+    height: 200px;
+    object-fit: contain; /* Đổi thành contain để ảnh không bị cắt */
+    padding: 1rem;
 }
 
-.card-body {
+.product-card .card-body {
     display: flex;
     flex-direction: column;
+    padding: 1rem;
 }
 
-.card-title {
-    font-size: 1rem;
+.product-card .card-title {
+    font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    flex-grow: 1; /* Giúp tiêu đề chiếm không gian còn lại, đẩy giá xuống */
+    min-height: 42px; /* Đảm bảo các card cao bằng nhau dù tiêu đề 1 hay 2 dòng */
 }
 
-.card-title a {
+.product-card .card-title a {
     color: #212529; /* Màu chữ đen cho tiêu đề sách */
 }
 
-.card-title a:hover {
+.product-card .card-title a:hover {
     color: #0d6efd;
     text-decoration: none;
 }
 
-.card-text.text-muted {
-    font-size: 0.875rem;
-}
-
-.card-body h4 {
-    color: #d9534f; /* Màu đỏ cho giá tiền để nổi bật */
+.product-card .card-text.text-danger {
+    font-size: 1.1rem;
     font-weight: 700;
-    margin-top: auto; /* Đẩy giá tiền và nút xuống dưới cùng của card */
     margin-bottom: 1rem;
 }
 
-.card-footer {
+.product-card .card-footer {
     background-color: transparent;
     border-top: none;
-    padding: 0 1.25rem 1.25rem;
+    padding: 0 1rem 1rem;
+}
+.item-quantity {
+    max-width: 80px; /* Giới hạn chiều rộng ô nhập số lượng */
+    text-align: center;
 }
 
-
-/* --- Product Detail Page --- */
-.product-detail-img {
-    border-radius: 1rem;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+.remove-item-btn {
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.5rem;
 }
-
-
-/* --- Pagination --- */
-.pagination .page-item .page-link {
-    border-radius: 0.375rem;
-    margin: 0 0.25rem;
-    border: none;
-    color: #0d6efd;
+.remove-item-btn:hover {
+    background-color: #f8f9fa;
 }
-
-.pagination .page-item.active .page-link {
-    background-color: #0d6efd;
-    color: #ffffff;
-    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.4);
-}
-
 
 /* --- Footer --- */
 .footer {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    background-color: #ffffff;
-    border-top: 1px solid #dee2e6;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    background-color: #212529; /* Đổi màu footer cho đẹp hơn */
+    color: #adb5bd;
     margin-top: 4rem;
+}
+.footer h5 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+.footer a {
+    color: #adb5bd;
+}
+.footer a:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* === CUSTOM STYLE FOR PRODUCT DETAIL PAGE === */
+/* ============================================= */
+
+.product-title {
+    font-weight: 600;
+}
+
+.product-meta a {
+    text-decoration: none;
+    color: #0d6efd;
+}
+.product-meta a:hover {
+    text-decoration: underline;
+}
+
+.product-price-current {
+    font-weight: 700;
+}
+
+.product-price-old {
+    font-size: 1.25rem;
+    margin-left: 1rem;
+}
+
+.product-specs li {
+    padding: 5px 0;
+}
+
+.quantity-selector .form-control {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+}
+.quantity-selector .btn {
+    z-index: 1;
+}
+
+.service-box {
+    border: 1px solid #e9ecef;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+}
+
+.service-box-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.service-box ul li {
+    font-size: 0.95rem;
+}
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse; /* Đảo ngược thứ tự để CSS selector ~ hoạt động đúng */
+    justify-content: flex-end;
+}
+
+.star-rating input[type="radio"] {
+    display: none; /* Ẩn các nút radio mặc định */
+}
+
+.star-rating label.star {
+    font-size: 2.5rem; /* Kích thước của ngôi sao */
+    color: #ddd; /* Màu mặc định của sao */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+/* Khi hover vào một ngôi sao, tất cả các sao trước nó (theo chiều DOM ngược) sẽ sáng lên */
+.star-rating label.star:hover,
+.star-rating label.star:hover ~ label.star,
+.star-rating input[type="radio"]:checked ~ label.star {
+    color: #ffc107; /* Màu vàng khi được chọn hoặc hover */
 }

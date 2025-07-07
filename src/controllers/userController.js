@@ -3,7 +3,8 @@
 // Import các model cần thiết và các toán tử của Sequelize
 const { User, Role } = require('../models');
 const { Op } = require('sequelize');
-
+const bcrypt = require('bcryptjs'); // Cần bcrypt để so sánh mật khẩu
+const generateToken = require('../utils/generateToken'); // Cần để tạo lại token khi đổi email
 /**
  * @description     Admin: Lấy danh sách tất cả người dùng (có phân trang).
  * @route           GET /api/users
@@ -161,16 +162,15 @@ const deleteUser = async (request, response) => {
  * @route           GET /api/users/profile
  * @access          Private
  */
-const getUserProfile = async (request, response) => {
-    // Middleware `protect` đã lấy thông tin user và gán vào request.user
-    const user = await User.findByPk(request.user.id, {
-        attributes: { exclude: ['mat_khau', 'role_id'] } // Không trả về các trường nhạy cảm
+const getUserProfile = async (req, res) => {
+    // req.user được lấy từ middleware 'protect'
+    const user = await User.findByPk(req.user.id, {
+        attributes: { exclude: ['mat_khau', 'role_id'] }
     });
-
     if (user) {
-        response.status(200).json(user);
+        res.status(200).json(user);
     } else {
-        response.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        res.status(404).json({ message: 'Không tìm thấy người dùng.' });
     }
 };
 
@@ -179,38 +179,39 @@ const getUserProfile = async (request, response) => {
  * @route           PUT /api/users/profile
  * @access          Private
  */
-const updateUserProfile = async (request, response) => {
+const updateUserProfile = async (req, res) => {
     try {
-        const user = await User.findByPk(request.user.id);
-
-        if (user) {
-            // Chỉ cho phép cập nhật các trường an toàn
-            user.ho_ten = request.body.ho_ten || user.ho_ten;
-            user.phone = request.body.phone || user.phone;
-            user.dia_chi = request.body.dia_chi || user.dia_chi;
-            
-            // Xử lý nếu người dùng muốn thay đổi email hoặc username (cần kiểm tra trùng lặp)
-            if (request.body.email && request.body.email !== user.email) {
-                const emailExists = await User.findOne({ where: { email: request.body.email } });
-                if (emailExists) {
-                    return response.status(400).json({ message: 'Email đã tồn tại.' });
-                }
-                user.email = request.body.email;
-            }
-
-            const updatedUser = await user.save();
-            response.status(200).json({
-                id: updatedUser.id,
-                ho_ten: updatedUser.ho_ten,
-                email: updatedUser.email,
-                phone: updatedUser.phone,
-                dia_chi: updatedUser.dia_chi,
-            });
-        } else {
-            response.status(404).json({ message: 'Không tìm thấy người dùng.' });
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
         }
+
+        user.ho_ten = req.body.ho_ten || user.ho_ten;
+        user.phone = req.body.phone || user.phone;
+        user.dia_chi = req.body.dia_chi || user.dia_chi;
+        
+        // Xử lý khi người dùng thay đổi email
+        if (req.body.email && req.body.email !== user.email) {
+            const emailExists = await User.findOne({ where: { email: req.body.email } });
+            if (emailExists) {
+                return res.status(400).json({ message: 'Email này đã được sử dụng.' });
+            }
+            user.email = req.body.email;
+        }
+
+        const updatedUser = await user.save();
+        
+        // Trả về thông tin user và một token MỚI (nếu email thay đổi)
+        res.status(200).json({
+            id: updatedUser.id,
+            ho_ten: updatedUser.ho_ten,
+            email: updatedUser.email,
+            ten_dang_nhap: updatedUser.ten_dang_nhap,
+            role_id: updatedUser.role_id,
+            token: generateToken(updatedUser.id) // Tạo token mới để client cập nhật
+        });
     } catch (error) {
-        response.status(500).json({ message: 'Lỗi server', error: error.message });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 };
 
@@ -219,27 +220,23 @@ const updateUserProfile = async (request, response) => {
  * @route           PUT /api/users/change-password
  * @access          Private
  */
-const changeUserPassword = async (request, response) => {
-    const { currentPassword, newPassword } = request.body;
-
+const changeUserPassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
-        return response.status(400).json({ message: 'Vui lòng cung cấp mật khẩu cũ và mật khẩu mới.' });
+        return res.status(400).json({ message: 'Vui lòng điền đủ thông tin.' });
     }
-
     try {
-        const user = await User.findByPk(request.user.id);
-        
-        // Kiểm tra mật khẩu cũ có đúng không
-        if (user && (await user.comparePassword(currentPassword))) {
-            // Mật khẩu mới sẽ được hash tự động bởi hook 'beforeUpdate' trong model
-            user.mat_khau = newPassword;
-            await user.save();
-            response.status(200).json({ message: 'Đổi mật khẩu thành công.' });
-        } else {
-            response.status(401).json({ message: 'Mật khẩu cũ không chính xác.' });
+        const user = await User.findByPk(req.user.id);
+        const isMatch = await bcrypt.compare(currentPassword, user.mat_khau);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Mật khẩu cũ không chính xác.' });
         }
+        user.mat_khau = newPassword; // Hook sẽ tự hash
+        await user.save();
+        res.status(200).json({ message: 'Đổi mật khẩu thành công.' });
     } catch (error) {
-        response.status(500).json({ message: 'Lỗi server', error: error.message });
+        res.status(500).json({ message: 'Lỗi server', error: error.message });
     }
 };
 

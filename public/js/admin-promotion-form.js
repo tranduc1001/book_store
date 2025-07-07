@@ -57,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const cleaveOptions = {
         numeral: true,
         numeralThousandsGroupStyle: 'thousand',
-        delimiter: '.',
         numeralDecimalScale: 0,
     };
 

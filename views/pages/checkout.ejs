@@ -21,9 +21,30 @@
                     <label for="email_nguoi_nhan" class="form-label">Email</label>
                     <input type="email" class="form-control" id="email_nguoi_nhan" required>
                 </div>
+                <!-- Ô input cho địa chỉ chi tiết -->
                 <div class="mb-3">
-                    <label for="dia_chi_giao_hang" class="form-label">Địa chỉ giao hàng</label>
-                    <input type="text" class="form-control" id="dia_chi_giao_hang" required>
+                    <label for="address-detail" class="form-label">Địa chỉ chi tiết (Số nhà, tên đường...)</label>
+                    <input type="text" class="form-control" id="address-detail" placeholder="Ví dụ: 502 Lê Hồng Phong" required>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label for="province" class="form-label">Tỉnh / Thành phố</label>
+                        <select class="form-select" id="province" required>
+                            <option value="" selected disabled>Chọn Tỉnh / TP</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="district" class="form-label">Quận / Huyện</label>
+                        <select class="form-select" id="district" required disabled>
+                            <option value="" selected disabled>Chọn Quận / Huyện</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="ward" class="form-label">Phường / Xã</label>
+                        <select class="form-select" id="ward" required disabled>
+                            <option value="" selected disabled>Chọn Phường / Xã</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="ghi_chu_khach_hang" class="form-label">Ghi chú (tùy chọn)</label>
@@ -40,12 +61,14 @@
                     </label>
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="paymentMethod" id="momo" value="MOMO" disabled>
-                    <label class="form-check-label" for="momo">
-                        Thanh toán qua ví Momo (Sắp có)
+                    <!-- 1. Bỏ thuộc tính 'disabled' -->
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="momo" value="momo">
+                    <!-- 2. Sửa lại tên và value cho nhất quán (viết thường) -->
+                    <label class="form-check-label d-flex align-items-center" for="momo">
+                        Thanh toán qua ví 
+                        <img src="/images/momo-logo.png" alt="MoMo" style="height: 20px; margin-left: 5px;">
                     </label>
                 </div>
-                
                 <hr class="my-4">
 
                 <button type="submit" class="w-100 btn btn-primary btn-lg">Hoàn tất đặt hàng</button>
@@ -71,7 +94,10 @@
                         <p class="mb-2">Phí vận chuyển</p>
                         <p class="mb-2" id="shipping">0đ</p>
                     </div>
-                    <hr>
+                    <div class="d-flex justify-content-between text-success" id="discount-row-checkout" style="display: none;">
+                        <p class="mb-2">Giảm giá</p>
+                        <p class="mb-2" id="discount-amount-checkout">- 0đ</p>
+                    </div>
                     <div class="d-flex justify-content-between">
                         <p class="mb-2 fw-bold">Tổng cộng</p>
                         <p class="mb-2 fw-bold" id="total">0đ</p>

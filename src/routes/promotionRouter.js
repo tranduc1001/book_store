@@ -9,7 +9,8 @@ const {
     getAllPromotions,
     updatePromotion,
     deletePromotion,
-    applyPromotion
+    applyPromotion,
+    getAvailablePromotions
 } = require('../controllers/promotionController');
 
 // 3. Import các middleware bảo vệ
@@ -23,6 +24,8 @@ const router = express.Router();
 // Định nghĩa route '/apply' để người dùng đã đăng nhập có thể kiểm tra một mã khuyến mãi.
 // Ví dụ: POST /api/promotions/apply
 router.post('/apply', protect, applyPromotion);
+
+router.get('/available', protect, getAvailablePromotions);
 
 // Định nghĩa route cho đường dẫn gốc ('/'), tức là '/api/promotions'
 // Các thao tác này chỉ dành cho Admin.

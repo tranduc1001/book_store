@@ -3,6 +3,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/connectDB');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // Sử dụng phương thức sequelize.define() để định nghĩa một model mới.
 const User = sequelize.define('User', {
@@ -63,6 +64,14 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
     },
+    resetPasswordToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    resetPasswordExpire: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 
 }, {
     tableName: 'users',
@@ -81,6 +90,7 @@ const User = sequelize.define('User', {
             }
         }
     }
+    
 });
 
 // Định nghĩa các mối quan hệ (associations)
@@ -89,7 +99,7 @@ User.associate = (models) => {
     User.belongsTo(models.Role, {
         foreignKey: 'role_id',
         as: 'role',
-        onDelete: 'SET NULL', // Nếu Role bị xóa, role_id trong User sẽ thành NULL
+        onDelete: 'RESTRICT', // Nếu Role bị xóa, role_id trong User sẽ thành NULL
         onUpdate: 'CASCADE'   // Nếu id trong Role thay đổi, role_id trong User cũng thay đổi theo
     });
 
@@ -102,7 +112,16 @@ User.associate = (models) => {
     // Thêm các mối quan hệ khác ở đây nếu cần, ví dụ: User có nhiều Order
     User.hasMany(models.Order, {
         foreignKey: 'user_id',
-        as: 'orders'
+        as: 'orders',
+        onDelete: 'SET NULL', // <<== THÊM VÀO: Giữ lại Order khi User bị xóa
+        onUpdate: 'CASCADE'
+    });
+     // Quan hệ: User có nhiều Review
+    User.hasMany(models.Review, {
+        foreignKey: 'user_id',
+        as: 'reviews',
+        onDelete: 'CASCADE', // <<== THÊM VÀO: Xóa tất cả review của user khi user bị xóa
+        onUpdate: 'CASCADE'
     });
 };
 
@@ -110,5 +129,20 @@ User.associate = (models) => {
 User.prototype.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.mat_khau);
 };
+User.prototype.getResetPasswordToken = function () {
+    // 1. Tạo một token ngẫu nhiên
+    const resetToken = crypto.randomBytes(20).toString('hex');
 
+    // 2. Hash token đó và lưu vào cột resetPasswordToken trong DB
+    this.resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // 3. Đặt thời gian hết hạn (ví dụ: 10 phút)
+    this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    // 4. Trả về token gốc (chưa hash) để gửi qua email
+    return resetToken;
+};
 module.exports = User;

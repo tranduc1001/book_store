@@ -1,87 +1,62 @@
-// Gói toàn bộ code trong một hàm IIFE (Immediately Invoked Function Expression)
-// để tránh làm ô nhiễm scope toàn cục.
-(() => {
+// File: /public/js/admin-auth.js (Phiên bản đã sửa và tối ưu)
+
+// Chờ cho toàn bộ cây DOM được tải xong rồi mới thực thi
+document.addEventListener('DOMContentLoaded', () => {
+
     // ====================================================================
-    // ===== PHẦN 1: KIỂM TRA QUYỀN TRUY CẬP KHI TẢI TRANG (giữ nguyên) =====
+    // PHẦN 1: HIỂN THỊ THÔNG TIN ADMIN VÀ XỬ LÝ ĐĂNG XUẤT
     // ====================================================================
+
+    const adminNameEl = document.getElementById('admin-name');
+    const logoutBtn = document.getElementById('logout-btn');
     const userString = localStorage.getItem('user');
-    if (!userString) {
-        alert('Vui lòng đăng nhập với tài khoản Admin để truy cập trang này.');
-        window.location.href = '/login';
-        return;
-    }
-    try {
-        const user = JSON.parse(userString);
-        // Kiểm tra xem user có tồn tại và có phải là admin không (role_id == 1)
-        if (user && user.role_id == 1) {
-            // Hiển thị tên Admin trên thanh top navigation
-            const adminNameEl = document.getElementById('admin-name');
-            if (adminNameEl) {
-                adminNameEl.textContent = user.ho_ten || 'Admin';
+
+    // Hiển thị tên Admin nếu có
+    if (userString) {
+        try {
+            const user = JSON.parse(userString);
+            if (adminNameEl && user.ho_ten) {
+                adminNameEl.textContent = user.ho_ten;
             }
-        } else {
-            alert('Bạn không có quyền truy cập trang này.');
-            window.location.href = '/'; // Chuyển về trang chủ
+        } catch (error) {
+            console.error('Lỗi phân tích dữ liệu user:', error);
         }
-    } catch (error) {
-        console.error('Lỗi dữ liệu localStorage:', error);
-        localStorage.clear();
-        window.location.href = '/login';
     }
 
-    // ====================================================================
-    // ========== PHẦN 2: XỬ LÝ SỰ KIỆN ĐĂNG XUẤT (phần mới) ==============
-    // ====================================================================
+    // Gắn sự kiện cho nút đăng xuất
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
 
-    // Chờ cho toàn bộ cây DOM được tải xong rồi mới tìm nút đăng xuất
-    document.addEventListener('DOMContentLoaded', () => {
-        const logoutBtn = document.getElementById('logout-btn');
-
-        // Nếu tìm thấy nút đăng xuất
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', async (e) => {
-                e.preventDefault(); // Ngăn hành động mặc định của thẻ <a>
-
-                // Hiển thị hộp thoại xác nhận cho chắc chắn
-                const result = await Swal.fire({
-                    title: 'Bạn có chắc chắn muốn đăng xuất?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Đúng, đăng xuất!',
-                    cancelButtonText: 'Hủy bỏ'
-                });
-
-                if (result.isConfirmed) {
-                    try {
-                        // 1. Gọi API để server xóa httpOnly cookie
-                        await fetch('/api/auth/logout', { method: 'POST' });
-
-                        // 2. Xóa dữ liệu phiên làm việc ở phía client
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-
-                        // 3. Thông báo thành công và chuyển hướng
-                        await Swal.fire(
-                            'Đã đăng xuất!',
-                            'Bạn đã đăng xuất thành công.',
-                            'success'
-                        );
-                        
-                        window.location.href = '/login';
-
-                    } catch (error) {
-                        console.error('Lỗi khi đăng xuất:', error);
-                        Swal.fire(
-                            'Lỗi!',
-                            'Có lỗi xảy ra trong quá trình đăng xuất.',
-                            'error'
-                        );
-                    }
-                }
+            // Hiển thị hộp thoại xác nhận
+            const result = await Swal.fire({
+                title: 'Bạn có chắc chắn muốn đăng xuất?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Đúng, đăng xuất!',
+                cancelButtonText: 'Hủy bỏ'
             });
-        }
-    });
 
-})(); // Thực thi hàm IIFE ngay lập tức 
+            if (result.isConfirmed) {
+                try {
+                    // 1. Gọi API để server xóa httpOnly cookie
+                    await fetch('/api/auth/logout', { method: 'POST' });
+
+                    // 2. Xóa dữ liệu phiên làm việc ở client
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+
+                    // 3. Thông báo và chuyển hướng
+                    await Swal.fire('Đã đăng xuất!', 'Bạn đã đăng xuất thành công.', 'success');
+                    window.location.href = '/login';
+
+                } catch (error) {
+                    console.error('Lỗi khi đăng xuất:', error);
+                    Swal.fire('Lỗi!', 'Có lỗi xảy ra trong quá trình đăng xuất.', 'error');
+                }
+            }
+        });
+    }
+});

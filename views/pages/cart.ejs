@@ -1,67 +1,112 @@
-<!-- File: /views/pages/cart.ejs -->
 <%- include('../partials/header') %>
 
-<section class="h-100" style="background-color: #eee;">
-    <div class="container h-100 py-5">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col-12">
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-normal mb-0 text-black">Giỏ Hàng Của Bạn</h3>
-                </div>
-
-                <div class="card rounded-3 mb-4">
-                    <div class="card-body p-4" id="cart-items-container">
+<section class="bg-light py-5">
+    <div class="container">
+        <h1 class="mb-4">Giỏ Hàng Của Bạn</h1>
+        <div class="row">
+            <!-- ============================================ -->
+            <!-- ======== CỘT TRÁI: DANH SÁCH SẢN PHẨM ======= -->
+            <!-- ============================================ -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body" id="cart-items-container">
                         <!-- Các sản phẩm trong giỏ hàng sẽ được JS render vào đây -->
-                        <p>Đang tải giỏ hàng...</p>
+                        <div class="text-center p-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Đang tải giỏ hàng...</p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                 <div class="card">
+            <!-- ============================================ -->
+            <!-- ======== CỘT PHẢI: TÓM TẮT ĐƠN HÀNG ======== -->
+            <!-- ============================================ -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">Tóm tắt đơn hàng</h5>
+                    </div>
                     <div class="card-body">
-                        <!-- Tạm tính -->
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Tạm tính</span>
-                            <strong id="cart-subtotal">0đ</strong>
-                        </div>
-                        <!-- Phí vận chuyển -->
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Phí vận chuyển</span>
-                            <strong id="shipping-fee">0đ</strong>
-                        </div>
-                        <hr>
-                        <!-- Phần nhập mã khuyến mãi -->
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-2">
+                                <span>Tạm tính</span>
+                                <strong id="cart-subtotal">0đ</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-2">
+                                <span>Phí vận chuyển</span>
+                                <strong id="shipping-fee">0đ</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center text-success border-0 px-0 pb-2" id="discount-row" style="display: none;">
+                                <span>Giảm giá</span>
+                                <strong id="discount-amount">- 0đ</strong>
+                            </li>
+                        </ul>
+
+                        <hr class="my-3">
+                        
+                        <!-- Mã khuyến mãi -->
                         <div class="mb-3">
-                            <label for="promo-code-input" class="form-label">Mã khuyến mãi</label>
+                            <p class="mb-2">Mã khuyến mãi</p>
+                            <!-- NÚT MỚI: MỞ ô CHỌN MÃ -->
+                            <div class="d-grid mb-2">
+                               <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#promo-modal">
+                                    <i class="fas fa-ticket-alt me-2"></i> Chọn mã khuyến mãi
+                                </button>
+                            </div>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="promo-code-input" placeholder="Nhập mã của bạn">
                                 <button class="btn btn-outline-primary" type="button" id="apply-promo-btn">Áp dụng</button>
                             </div>
-                            <div id="promo-message" class="mt-2"></div>
+                            <div id="promo-message" class="mt-2 small"></div>
                         </div>
-                        <hr>
-                        <!-- Phần giảm giá (ẩn mặc định) -->
-                        <div class="d-flex justify-content-between mb-2 text-success" id="discount-row" style="display: none;">
-                            <span>Giảm giá</span>
-                            <strong id="discount-amount">0đ</strong>
+                        <div id="promo-message" class="mt-2 small d-flex align-items-center">
+                            <!-- Text thông báo sẽ được JS chèn vào đây -->
+                            <span id="promo-text-message"></span>
+                            <!-- Nút hủy, ẩn theo mặc định -->
+                            <span id="remove-promo-btn" class="ms-2 text-danger fw-bold" style="cursor: pointer; display: none;">[Hủy]</span>
                         </div>
-                        <!-- Tổng cộng cuối cùng -->
-                        <div class="d-flex justify-content-between fw-bold fs-5">
-                            <span>Tổng cộng</span>
-                            <span id="final-total" class="text-danger">0đ</span>
-                        </div>
-                        <div class="d-grid mt-3">
-                            <a href="/checkout" class="btn btn-warning btn-block btn-lg">Tiến hành thanh toán</a>
+
+                        <hr class="my-3">
+
+                        <!-- Tổng cộng -->
+                        <div class="d-flex justify-content-between align-items-center border-0 px-0 fw-bold">
+                            <span>TỔNG CỘNG</span>
+                            <span id="final-total" class="fs-5 text-danger">0đ</span>
                         </div>
                     </div>
+                    <div class="card-footer border-0 bg-white p-3">
+                        <a href="/checkout" class="btn btn-warning w-100 btn-lg">Tiến hành thanh toán</a>
+                    </div>
                 </div>
-
             </div>
         </div>
     </div>
 </section>
 
-<!-- Link đến file script xử lý giỏ hàng -->
-<script src="/js/cart.js"></script>
 
+<!-- ============= MODAL HIỂN THỊ KHUYẾN MÃI ================ -->
+<div class="modal fade" id="promo-modal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promoModalLabel">Ưu đãi của bạn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Danh sách khuyến mãi sẽ được JS chèn vào đây -->
+                <div id="promo-list-container">
+                    <p class="text-center">Đang tìm các ưu đãi tốt nhất...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="select-promo-btn">Áp dụng mã đã chọn</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/cart.js"></script>
 <%- include('../partials/footer') %>

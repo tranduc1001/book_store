@@ -1,5 +1,13 @@
 // File: /src/controllers/viewController.js
 const axios = require('axios');
+
+
+/**
+ * Hàm trợ giúp để tạo URL API cơ sở
+ * @param {object} req - Đối tượng request
+ * @returns {string} - URL API cơ sở (ví dụ: http://localhost:8080/api)
+ */
+const getApiBaseUrl = (req) => `${req.protocol}://${req.get('host')}/api`;
 /**
  * @description     Render trang chủ
  * @route           GET /
@@ -19,35 +27,45 @@ const renderHomePage = (request, response) => {
     }
 };
 
-const renderProductListPage = async (request, response) => {
+const renderProductListPage = async (req, res) => {
     try {
-        // 1. Gọi đến API để lấy dữ liệu sản phẩm.
-        //    Đây là một HTTP request từ server backend đến chính server backend.
-        //    Chúng ta cần cung cấp đường dẫn đầy đủ.
-        const apiUrl = `${request.protocol}://${request.get('host')}/api/products`;
+        const apiBaseUrl = getApiBaseUrl(req);
         
-        // Sử dụng axios để thực hiện GET request đến API
-        const apiResponse = await axios.get(apiUrl, {
-            // Truyền các tham số query (lọc, sắp xếp,...) từ URL của trang view
-            // đến URL của API. Ví dụ: nếu người dùng truy cập /products?page=2,
-            // thì API cũng sẽ được gọi với /api/products?page=2.
-            params: request.query
-        });
+        // 1. Lấy đồng thời tất cả dữ liệu cần thiết cho trang
+        const [productsResponse, categoriesResponse, publishersResponse] = await Promise.all([
+            // Lấy danh sách sản phẩm đã được lọc/phân trang
+            axios.get(`${apiBaseUrl}/products`, { params: req.query }),
+            // Lấy tất cả danh mục cho sidebar
+            axios.get(`${apiBaseUrl}/categories`),
+            // Lấy tất cả nhà xuất bản cho bộ lọc
+           // axios.get(`${apiBaseUrl}/products/publishers`) // Giả định bạn có API này
+        ]);
 
-        // 2. Lấy dữ liệu từ kết quả trả về của API
-        const { products, pagination } = apiResponse.data;
+        const { products, pagination } = productsResponse.data;
+        const allCategories = categoriesResponse.data;
+        //const allPublishers = publishersResponse.data;
 
-        // 3. Render trang EJS và truyền dữ liệu đã lấy được vào.
-        response.render('pages/products', {
-            title: 'Tất cả sản phẩm',
-            products: products,         // Mảng các sản phẩm
-            pagination: pagination      // Thông tin phân trang
+        // 2. Lấy thông tin của danh mục hiện tại (nếu có)
+        let currentCategoryInfo = null;
+        if (req.query.category) {
+            // Tìm trong danh sách đã lấy về để không phải gọi API lần nữa
+            currentCategoryInfo = allCategories.find(cat => cat.id == req.query.category);
+        }
+
+        // 3. Render trang EJS và truyền tất cả dữ liệu vào
+        res.render('pages/products', {
+            title: currentCategoryInfo ? currentCategoryInfo.ten_danh_muc : 'Tất Cả Sản Phẩm',
+            products: products,
+            pagination: pagination,
+            allCategories: allCategories,
+            //allPublishers: allPublishers,
+            currentCategory: currentCategoryInfo,
+            queryParams: req.query
         });
 
     } catch (error) {
-        // Xử lý lỗi nếu API không trả về dữ liệu hoặc có lỗi khác
-        console.error("Lỗi khi lấy dữ liệu sản phẩm từ API:", error);
-        response.status(500).render('pages/error', {
+        console.error("Lỗi khi lấy dữ liệu trang sản phẩm:", error.response ? error.response.data : error.message);
+        res.status(500).render('pages/error', {
              title: 'Lỗi',
              message: 'Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.'
         });
@@ -58,43 +76,28 @@ const renderProductListPage = async (request, response) => {
  * @route           GET /products/:id
  * @access          Public
  */
-const renderProductDetailPage = async (request, response) => {
+const renderProductDetailPage = async (req, res) => {
     try {
-        const productId = request.params.id;
-        const apiUrl = `${request.protocol}://${request.get('host')}/api`;
+        const { id } = req.params;
+        const apiBaseUrl = getApiBaseUrl(req);
 
-        // Sử dụng `Promise.all` để thực hiện đồng thời nhiều request API, giúp tăng tốc độ tải trang.
         const [productResponse, reviewsResponse] = await Promise.all([
-            // Request 1: Lấy thông tin chi tiết sản phẩm
-            axios.get(`${apiUrl}/products/${productId}`),
-            // Request 2: Lấy danh sách bình luận của sản phẩm
-            axios.get(`${apiUrl}/products/${productId}/reviews`)
+            axios.get(`${apiBaseUrl}/products/${id}`),
+            axios.get(`${apiBaseUrl}/products/${id}/reviews`)
         ]);
 
-        // Lấy dữ liệu từ kết quả trả về
-        const product = productResponse.data;
-        const reviews = reviewsResponse.data;
-
-        // Render trang EJS và truyền dữ liệu vào
-        response.render('pages/product-detail', {
-            title: product.ten_sach, // Lấy tên sách làm tiêu đề trang
-            product: product,
-            reviews: reviews
+        res.render('pages/product-detail', {
+            title: productResponse.data.ten_sach,
+            product: productResponse.data,
+            reviews: reviewsResponse.data
         });
 
     } catch (error) {
-        // Xử lý lỗi nếu không tìm thấy sản phẩm (API trả về lỗi 404) hoặc có lỗi server
         console.error("Lỗi khi lấy dữ liệu chi tiết sản phẩm:", error.response ? error.response.data : error.message);
         if (error.response && error.response.status === 404) {
-             response.status(404).render('pages/error', {
-                title: 'Không tìm thấy',
-                message: 'Sản phẩm bạn đang tìm kiếm không tồn tại.'
-            });
+             res.status(404).render('pages/error', { title: 'Không tìm thấy', message: 'Sản phẩm bạn đang tìm kiếm không tồn tại.' });
         } else {
-            response.status(500).render('pages/error', {
-                title: 'Lỗi',
-                message: 'Không thể tải trang chi tiết sản phẩm. Vui lòng thử lại sau.'
-            });
+            res.status(500).render('pages/error', { title: 'Lỗi', message: 'Không thể tải trang chi tiết sản phẩm.' });
         }
     }
 };
@@ -173,7 +176,25 @@ const renderProfilePage = (request, response) => {
         title: 'Thông Tin Tài Khoản'
     });
 };
+/**
+ * Render trang Quên mật khẩu.
+ */
+const renderForgotPasswordPage = (req, res) => {
+    // <<< ĐẢM BẢO RẰNG DÒNG NÀY ĐANG RENDER ĐÚNG FILE EJS >>>
+    res.render('pages/forgot-password', {
+        title: 'Quên Mật Khẩu'
+    });
+};
 
+/**
+ * Render trang Đặt lại mật khẩu.
+ */
+const renderResetPasswordPage = (req, res) => { // <<< Dùng const
+    // Chúng ta không cần truyền token vào EJS vì JS sẽ tự lấy từ URL
+    res.render('pages/reset-password', {
+        title: 'Đặt Lại Mật Khẩu'
+    });
+};
 module.exports = {
     renderHomePage,
     renderProductListPage,
@@ -184,5 +205,7 @@ module.exports = {
     renderCheckoutPage,
     renderMyOrdersPage,
     renderOrderDetailPage,
-    renderProfilePage
+    renderProfilePage,
+    renderForgotPasswordPage,
+    renderResetPasswordPage
 };

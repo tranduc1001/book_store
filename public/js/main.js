@@ -199,7 +199,7 @@ async function fetchProductsAndRender(wrapperId, pathAndQuery) {
                 <div class="swiper-slide">
                     <div class="card h-100 product-card border-0 shadow-sm">
                         <a href="/products/${product.id}">
-                            <img src="${product.img || '/images/placeholder.png'}" class="card-img-top" alt="${product.ten_sach}" style="height: 200px; object-fit: contain; padding: 10px;">
+                            <img src="${product.img }" class="card-img-top" alt="${product.ten_sach}" style="height: 200px; object-fit: contain; padding: 10px;">
                         </a>
                         <div class="card-body d-flex flex-column p-2">
                             <h6 class="card-title flex-grow-1 mb-2" style="font-size: 0.9rem;">

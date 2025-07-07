@@ -14,7 +14,9 @@ const {
     renderCheckoutPage,
     renderMyOrdersPage,
     renderOrderDetailPage,
-    renderProfilePage
+    renderProfilePage,
+    renderForgotPasswordPage,
+    renderResetPasswordPage
 } = require('../controllers/viewController');
 
 router.get('/', renderHomePage);
@@ -28,5 +30,13 @@ router.get('/my-orders', renderMyOrdersPage);
 router.get('/orders/:id', renderOrderDetailPage);
 router.get('/profile', renderProfilePage);
 
+router.get('/forgot-password', renderForgotPasswordPage);
+router.get('/reset-password/:token', renderResetPasswordPage);
+router.get('/checkout-success', (req, res) => {
+    res.render('pages/checkout-success', { title: 'Thanh Toán Thành Công' });
+});
+router.get('/checkout-fail', (req, res) => {
+    res.render('pages/checkout-fail', { title: 'Thanh Toán Thất Bại' });
+});
 
 module.exports = router;

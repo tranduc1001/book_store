@@ -1,3 +1,4 @@
+<!-- File: /views/admin/pages/product-form.ejs  -->
 <%- include('../partials/header.ejs') %>
 
 <!-- Form đã được bọc bên ngoài để chứa tất cả các phần -->
@@ -18,9 +19,9 @@
                     </div>
 
                     <!-- Mô tả -->
-                    <div class="mb-3">
-                        <label for="mo_ta_ngan" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="mo_ta_ngan" name="mo_ta_ngan" rows="8"><%= product ? product.mo_ta_ngan : '' %></textarea>
+                     <div class="mb-3">
+                        <label for="mo_ta_ngan" class="form-label">Mô tả chi tiết</label>
+                        <textarea class="form-control" id="mo_ta_ngan" name="mo_ta_ngan" rows="15"><%= product ? product.mo_ta_ngan : '' %></textarea>
                     </div>
 
                     <!-- Hàng chứa các thông tin chi tiết -->
@@ -107,9 +108,13 @@
     </div>
 </form>
 
+
+
 <!-- Thêm Cleave.js CDN -->
+<script src="https://cdn.tiny.cloud/1/6jxj84yhnkoprhrf3zff9cou3kt0p192bxg8k6xfdq8mlem7/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+
+
+
 <script src="/js/admin-product-form.js"></script>
-
-
 <%- include('../partials/footer.ejs') %>

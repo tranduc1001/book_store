@@ -64,7 +64,7 @@ const Order = sequelize.define('Order', {
         defaultValue: 0.00
     },
     trang_thai_don_hang: {
-        type: DataTypes.ENUM('pending', 'confirmed', 'shipping', 'delivered', 'cancelled'),
+        type: DataTypes.ENUM('pending', 'pending_payment', 'confirmed', 'shipping', 'delivered', 'cancelled'),
         allowNull: false,
         defaultValue: 'pending',
     },
